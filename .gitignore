@@ -10,6 +10,7 @@ Makefile
 *.so
 *.test
 *.tmp
+.*.sw?
 *.vscode
 include/armadillo*
 *.gcda
@@ -20,9 +21,17 @@ include/armadillo*
 build/
 CMakeCache.txt
 CMakeFiles/
+.cache/
+compile_commands.json
 
 !docs/Makefile
 docs/build
 docs/xml
 
 header_only_version
+
+GPATH
+GRTAGS
+GTAGS
+cmake-Ubuntu_22.04.5_LTS-*
+tags
