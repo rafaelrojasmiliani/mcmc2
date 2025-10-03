@@ -88,70 +88,38 @@ Example:
 #include "mcmc.hpp"
 ```
 
-### Installation Method 1: Shared Library
+### Installation Method 1: Shared Library (CMake)
 
-The library can be installed on Unix-alike systems via the standard `./configure && make` method.
-
-First clone the library and any necessary submodules:
+MCMCLib now uses CMake as its primary build system. A typical out-of-source build and install using Eigen looks like this:
 
 ``` bash
-# clone mcmc into the current directory
-git clone https://github.com/kthohr/mcmc ./mcmc
-
-# change directory
-cd ./mcmc
-
-# clone necessary submodules
-git submodule update --init
+cmake -S . -B build \
+    -DMCMC_LINEAR_ALGEBRA=EIGEN \
+    -DCMAKE_INSTALL_PREFIX="/usr/local"
+cmake --build build
+cmake --install build
 ```
 
-Set (one) of the following environment variables *before* running `configure`:
+Set `MCMC_LINEAR_ALGEBRA` to `ARMA` to build against Armadillo instead. When CMake cannot locate your preferred backend automatically, provide the appropriate hint (e.g., `-DEigen3_DIR=/path/to/eigen3/share/eigen3/cmake`).
 
-``` bash
-export ARMA_INCLUDE_PATH=/path/to/armadillo
-export EIGEN_INCLUDE_PATH=/path/to/eigen
-```
+Additional configuration toggles include:
 
-Finally:
+* `-DMCMC_ENABLE_OPENMP=OFF` — disable OpenMP support when the compiler or toolchain does not provide it.
+* `-DMCMC_HEADER_ONLY=ON` — skip building the shared library and install the headers only (see below).
+* `-DEXAMPLES=ON` — compile every `.cpp` file beneath the backend-specific folder inside `examples/`, producing executables named after the source files.
 
-``` bash
-# build and install with Eigen
-./configure -i "/usr/local" -l eigen -p
-make
-make install
-```
-
-The final command will install MCMCLib into `/usr/local`.
-
-Configuration options (see `./configure -h`):
-
-&nbsp; &nbsp; &nbsp; **Primary**
-* `-h` print help
-* `-i` installation path; default: the build directory
-* `-f` floating-point precision mode; default: `double`
-* `-l` specify the choice of linear algebra library; choose `arma` or `eigen`
-* `-m` specify the BLAS and Lapack libraries to link with; for example, `-m "-lopenblas"` or `-m "-framework Accelerate"`
-* `-o` compiler optimization options; defaults to `-O3 -march=native -ffp-contract=fast -flto -DARMA_NO_DEBUG`
-* `-p` enable OpenMP parallelization features (*recommended*)
-
-&nbsp; &nbsp; &nbsp; **Secondary**
-* `-c` a coverage build (used with Codecov)
-* `-d` a 'development' build
-* `-g` a debugging build (optimization flags set to `-O0 -g`)
-
-&nbsp; &nbsp; &nbsp; **Special**
-* `--header-only-version` generate a header-only version of MCMCLib (see [below](#installation-method-2-header-only-library))
-<!-- * `-R` RcppArmadillo compatible build by setting the appropriate R library directories (R, Rcpp, and RcppArmadillo) -->
+All installation paths follow the standard [`GNUInstallDirs`](https://cmake.org/cmake/help/latest/module/GNUInstallDirs.html) layout and can be customised through the usual CMake cache variables.
 
 ## Installation Method 2: Header-only Library
 
-MCMCLib is also available as a header-only library (i.e., without the need to compile a shared library). Simply run `configure` with the `--header-only-version` option:
+MCMCLib is also available as a header-only library (i.e., without the need to compile a shared library). Configure the project with the `MCMC_HEADER_ONLY` option:
 
 ```bash
-./configure --header-only-version
+cmake -S . -B build -DMCMC_HEADER_ONLY=ON
+cmake --install build
 ```
 
-This will create a new directory, `header_only_version`, containing a copy of MCMCLib, modified to work on an inline basis. With this header-only version, simply include the header files (`#include "mcmc.hpp`) and set the include path to the `head_only_version` directory (e.g.,`-I/path/to/mcmclib/header_only_version`).
+This installs the library headers without producing an archive. After installation, include the headers (`#include "mcmc.hpp"`) and set your compiler's include path to the installation location (e.g., `-I/usr/local/include`).
 
 ## R Compatibility
 
