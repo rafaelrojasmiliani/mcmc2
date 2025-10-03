@@ -20,6 +20,21 @@
  
 /*
  * Sampling from a Gaussian distribution using NUTS
+ *
+ * Context for newcomers:
+ *   - Problem: recover the mean and standard deviation of a Normal
+ *     distribution from data when we only observe noisy draws.
+ *   - Mathematical target: given x_1,...,x_n ~ Normal(mu, sigma^2) with a
+ *     constant prior on (mu, log sigma), the joint posterior density is
+ *     proportional to sigma^{-n} exp(-0.5 sigma^{-2} sum_i (x_i - mu)^2).  The
+ *     gradients of this log-density drive the Hamiltonian dynamics.
+ *   - Why the mcmc library: the No-U-Turn Sampler (NUTS) adapts the path
+ *     length of Hamiltonian trajectories automatically; implementing this
+ *     correctly requires careful bookkeeping supplied by the library.
+ *   - Why Eigen: the sampler manipulates state vectors, gradients, and energy
+ *     metrics that naturally live in linear algebra objects.  Eigen gives us
+ *     convenient vectorized expressions and is directly supported by the
+ *     library wrappers enabled below.
  */
 
 // $CXX -Wall -std=c++14 -O3 -mcpu=native -ffp-contract=fast -I$EIGEN_INCLUDE_PATH -I./../../include/ nuts_normal.cpp -o nuts_normal.out -L./../.. -lmcmc

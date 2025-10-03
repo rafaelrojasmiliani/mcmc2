@@ -20,6 +20,21 @@
  
 /*
  * Sampling from a Gaussian Mixture Distribution using the Adaptive Equi-Energy Sampler (AEES)
+ *
+ * Context for newcomers:
+ *   - Problem: explore a two-component Gaussian mixture in two dimensions.
+ *     Each component concentrates near a different mode, so simple random walk
+ *     proposals tend to get stuck.
+ *   - Mathematical target: target density is p(x) = 0.5 * N(x | mu_1, sigma_1^2
+ *     I) + 0.5 * N(x | mu_2, sigma_2^2 I).  Its log-density is the log-sum-exp
+ *     of two Gaussian kernels, producing energy barriers between the modes that
+ *     motivate tempering.
+ *   - Why the mcmc library: the Adaptive Equi-Energy Sampler maintains energy
+ *     rings at different temperatures and performs energy-matching swaps to
+ *     jump between modes—functionality provided by the library implementation.
+ *   - Why Eigen: mixture parameters, proposal covariance matrices, and output
+ *     draws are stored as Eigen matrices/vectors, allowing concise linear
+ *     algebra expressions compatible with the AEES interface.
  */
 
 // $CXX -Wall -std=c++14 -O3 -mcpu=native -ffp-contract=fast -I$EIGEN_INCLUDE_PATH -I./../../include/ aees_mixture.cpp -o aees_mixture.out -L./../.. -lmcmc
