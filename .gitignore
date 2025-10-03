@@ -17,6 +17,9 @@ include/armadillo*
 *.gcov
 *.dSYM
 *.out
+build/
+CMakeCache.txt
+CMakeFiles/
 
 !docs/Makefile
 docs/build
