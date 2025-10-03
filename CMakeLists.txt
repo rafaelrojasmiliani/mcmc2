@@ -10,7 +10,7 @@ set(MCMC_LINEAR_ALGEBRA "EIGEN" CACHE STRING "Linear algebra backend to use (ARM
 set_property(CACHE MCMC_LINEAR_ALGEBRA PROPERTY STRINGS ARMA EIGEN)
 option(MCMC_ENABLE_OPENMP "Enable OpenMP parallelisation" ON)
 option(MCMC_HEADER_ONLY "Generate a header-only install tree" OFF)
-option(MCMC_BUILD_EXAMPLES "Build example executables" OFF)
+option(EXAMPLES "Build example executables" OFF)
 
 # Collect sources
 set(MCMC_SOURCES
@@ -42,7 +42,7 @@ target_include_directories(mcmc
 target_compile_features(mcmc ${MCMC_SCOPE} cxx_std_14)
 
 if(MCMC_LINEAR_ALGEBRA STREQUAL "ARMA")
-    if(NOT MCMC_HEADER_ONLY OR MCMC_BUILD_EXAMPLES)
+    if(NOT MCMC_HEADER_ONLY OR EXAMPLES)
         find_package(Armadillo REQUIRED)
     endif()
     if(NOT MCMC_HEADER_ONLY)
@@ -50,7 +50,7 @@ if(MCMC_LINEAR_ALGEBRA STREQUAL "ARMA")
     endif()
     target_compile_definitions(mcmc ${MCMC_SCOPE} MCMC_ENABLE_ARMA_WRAPPERS)
 elseif(MCMC_LINEAR_ALGEBRA STREQUAL "EIGEN")
-    if(NOT MCMC_HEADER_ONLY OR MCMC_BUILD_EXAMPLES)
+    if(NOT MCMC_HEADER_ONLY OR EXAMPLES)
         find_package(Eigen3 3.4 REQUIRED)
     endif()
     if(NOT MCMC_HEADER_ONLY)
@@ -110,6 +110,6 @@ install(FILES
 
 export(EXPORT mcmcTargets NAMESPACE mcmc:: FILE ${CMAKE_CURRENT_BINARY_DIR}/mcmcTargets.cmake)
 
-if(MCMC_BUILD_EXAMPLES)
+if(EXAMPLES)
     add_subdirectory(examples)
 endif()

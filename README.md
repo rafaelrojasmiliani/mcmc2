@@ -106,7 +106,7 @@ Additional configuration toggles include:
 
 * `-DMCMC_ENABLE_OPENMP=OFF` — disable OpenMP support when the compiler or toolchain does not provide it.
 * `-DMCMC_HEADER_ONLY=ON` — skip building the shared library and install the headers only (see below).
-* `-DMCMC_BUILD_EXAMPLES=ON` — compile the sample applications that live under `examples/` for the selected linear algebra backend.
+* `-DEXAMPLES=ON` — compile every `.cpp` file beneath the backend-specific folder inside `examples/`, producing executables named after the source files.
 
 All installation paths follow the standard [`GNUInstallDirs`](https://cmake.org/cmake/help/latest/module/GNUInstallDirs.html) layout and can be customised through the usual CMake cache variables.
 
