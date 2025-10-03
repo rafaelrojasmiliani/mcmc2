@@ -138,38 +138,56 @@ int main()
                               - 0.5 * static_cast<double>(dim) * std::log(2.0 * pi);
 
     // Step 2: choose an initial state x_0 and configure algorithmic settings.
-    // The initial point seeds the Hamiltonian dynamics, while the settings
-    // determine the leapfrog discretization (step_size, n_leap_steps) and how
-    // many samples we draw for burn-in and inference.
+    // The initial point seeds the Hamiltonian dynamics, while the settings fix
+    // how we discretize Hamilton's equations for the separable Hamiltonian
+    //   H(x, p) = -f(x) + 0.5 * ||p||^2
+    // where auxiliary momenta p ~ N(0, I) are introduced at each iteration.
     Eigen::VectorXd initial_val = mean + Eigen::VectorXd::Constant(dim, 0.2);
 
     mcmc::algo_settings_t settings;
-    settings.hmc_settings.step_size = 0.15;      // epsilon in leapfrog integration
-    settings.hmc_settings.n_leap_steps = 20;     // L leapfrog steps per proposal
-    settings.hmc_settings.n_burnin_draws = 1500; // discard to approximate stationarity
-    settings.hmc_settings.n_keep_draws = 3000;   // retained Monte Carlo sample size
+    // The step size epsilon controls the leapfrog discretization of the coupled
+    // ODEs d x / d t = +\partial H / \partial p = p and d p / d t = -\partial H / \partial x = \nabla f(x);
+    // smaller epsilon better approximates the continuous flow but costs more gradient evaluations for a
+    // fixed trajectory length.
+    settings.hmc_settings.step_size = 0.15;
+    // L leapfrog updates advance (x, p) by roughly L * epsilon units of simulated time,
+    // setting the proposal distance in phase space before the Metropolis correction accepts/rejects.
+    settings.hmc_settings.n_leap_steps = 20;
+    // Draws produced while the chain forgets its arbitrary x_0 are discarded to
+    // remove dependence on initialization (burn-in / transient phase).
+    settings.hmc_settings.n_burnin_draws = 1500;
+    // The remaining draws approximate expectations E[g(X)] via Monte Carlo averages.
+    settings.hmc_settings.n_keep_draws = 3000;
 
     // Step 3: call the Hamiltonian Monte Carlo driver with our callback f.
     // HMC simulates Hamiltonian flow using gradients from log_gaussian_density
     // to propose distant yet high-probability states, then applies a Metropolis
     // correction using differences f(x') - f(x).
     Eigen::MatrixXd draws_out;
+    // Inputs: initial_val is x_0 in R^n, log_gaussian_density supplies log p(x)
+    // and \nabla log p(x), draws_out stores the retained samples row-wise, params
+    // passes mu and Sigma information through the void* interface, and settings
+    // encapsulates the HMC hyperparameters set above.
     mcmc::hmc(initial_val, log_gaussian_density, draws_out, &params, settings);
 
     std::cout << "Acceptance rate: "
               << static_cast<double>(settings.hmc_settings.n_accept_draws) / settings.hmc_settings.n_keep_draws
               << std::endl;
 
-    // Diagnostic check: compare empirical means/stds against analytic values to
-    // verify that the Markov chain recovers the Normal moments.
+    // Diagnostic check: (i) treat the rows of draws_out as samples X^{(s)},
+    // (ii) compute the empirical mean \bar{X}_j and variance for each coordinate,
+    // (iii) compare them with the true Normal parameters to assess convergence.
     const auto n_draws = static_cast<std::size_t>(draws_out.rows());
 
     for (int j = 0; j < dim; ++j) {
         const double* begin = draws_out.col(j).data();
         const double* end = begin + n_draws;
 
+        // Step (ii-a): compute \bar{X}_j = (1 / S) \sum_s X^{(s)}_j via accumulate.
         const double sample_mean = std::accumulate(begin, end, 0.0) / static_cast<double>(n_draws);
+        // Step (ii-b): evaluate the second moment (1 / S) \sum_s (X^{(s)}_j)^2 using inner_product.
         const double sq_sum = std::inner_product(begin, end, begin, 0.0);
+        // Step (ii-c): combine the first and second moments to obtain Var[X_j].
         const double sample_var = sq_sum / static_cast<double>(n_draws) - sample_mean * sample_mean;
         const double sample_std = std::sqrt(sample_var);
 
