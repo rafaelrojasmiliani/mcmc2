@@ -31,7 +31,10 @@
  *       f(x) = -\tfrac{1}{2} (x - mu)^T diag(\sigma^{-2}) (x - mu)
  *              - \tfrac{1}{2} \sum_j \log(2\pi\sigma_j^2),
  *     which is the exact Normal log pdf with mean mu and component-wise
- *     standard deviations sigma_j.  We expose both the value of f and its
+ *     standard deviations sigma_j.  Working with log p(x) rather than p(x)
+ *     avoids numerical underflow for high-dimensional states and makes
+ *     constant factors in p(x) irrelevant because MCMC only requires ratios
+ *     p(x') / p(x) = exp(f(x') - f(x)).  We expose both the value of f and its
  *     gradient \nabla f(x) = - diag(\sigma^{-2}) (x - mu) so that gradient-based
  *     samplers can be employed.
  *   - Why the mcmc library: the Hamiltonian Monte Carlo routine handles the
