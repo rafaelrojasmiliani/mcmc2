@@ -20,6 +20,22 @@
  
 /*
  * Sampling from a Gaussian distribution using DE-MCMC
+ *
+ * Context for newcomers:
+ *   - Problem: infer the mean of a Normal distribution with known variance
+ *     under a Normal prior, mirroring the setup from the RWMH example but using
+ *     a population-based strategy.
+ *   - Mathematical target: the posterior density for mu given data x_1,...,x_n
+ *     and known sigma is Normal with precision n/sigma^2 + 1/sigma_0^2 and mean
+ *     proportional to sum_i x_i / sigma^2 + mu_0 / sigma_0^2.  We nevertheless
+ *     approximate it numerically to illustrate population proposals.
+ *   - Why the mcmc library: Differential Evolution MCMC (DE-MCMC) evolves an
+ *     ensemble of chains whose proposals depend on pairwise differences.  The
+ *     library manages the population bookkeeping, mutation steps, and
+ *     acceptance statistics.
+ *   - Why Eigen: ensemble members, data vectors, and proposal differences are
+ *     represented as Eigen objects, allowing concise linear algebra while
+ *     interoperating with the DE-MCMC interface.
  */
 
 // $CXX -Wall -std=c++14 -O3 -mcpu=native -ffp-contract=fast -I$EIGEN_INCLUDE_PATH -I./../../include/ de_normal_mean.cpp -o de_normal_mean.out -L./../.. -lmcmc

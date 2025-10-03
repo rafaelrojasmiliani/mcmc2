@@ -20,6 +20,21 @@
  
 /*
  * Sampling from a Gaussian distribution using HMC
+ *
+ * Context for newcomers:
+ *   - Problem: estimate the mean and standard deviation of a Normal
+ *     distribution given simulated observations.
+ *   - Mathematical target: with x_1,...,x_n ~ Normal(mu, sigma^2) and a flat
+ *     prior on (mu, log sigma), the log-density ell(mu,sigma) = -n log sigma -
+ *     0.5 sigma^{-2} sum_i (x_i - mu)^2 yields both gradients and the Fisher
+ *     information metric used to build the position-dependent mass matrix.
+ *   - Why the mcmc library: Riemannian Manifold HMC (RMHMC) extends Hamiltonian
+ *     Monte Carlo by adapting to local curvature via position-dependent mass
+ *     matrices.  Coding the generalized leapfrog integrator and tensor
+ *     bookkeeping is handled by the library.
+ *   - Why Eigen: the metric tensor, its derivatives, and parameter vectors are
+ *     naturally expressed as Eigen matrices/tensors.  The Eigen wrappers let us
+ *     supply these objects directly to the RMHMC routine.
  */
 
 // $CXX -Wall -std=c++14 -O3 -mcpu=native -ffp-contract=fast -I$EIGEN_INCLUDE_PATH -I./../../include/ rmhmc_normal.cpp -o rmhmc_normal.out -L./../.. -lmcmc
@@ -79,29 +94,29 @@ Eigen::MatrixXd tensor_fn(const Eigen::VectorXd& vals_inp, mcmc::Cube_t* tensor_
 {
     // const double mu    = vals_inp(0);
     const double sigma = vals_inp(1);
-  
+
     norm_data_t* dta = reinterpret_cast<norm_data_t*>(tensor_data);
-     
+
     const int n_vals = dta->x.size();
-  
+
     //
- 
+
     const double sigma_sq = sigma*sigma;
-  
+
     Eigen::MatrixXd tensor_out = Eigen::MatrixXd::Zero(2,2);
- 
+
     tensor_out(0,0) = ((double) n_vals) / sigma_sq;
     tensor_out(1,1) = 2.0 * ((double) n_vals) / sigma_sq;
-     
+
     //
-  
+
     if (tensor_deriv_out) {
         tensor_deriv_out->setZero(2,2,2);
-  
+
         //
-  
+
         // tensor_deriv_out->mat(0).setZero();
-  
+
         tensor_deriv_out->mat(1) = - 2.0 * tensor_out / sigma;
     }
   

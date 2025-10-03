@@ -20,6 +20,22 @@
  
 /*
  * Sampling from a Gaussian distribution using MALA
+ *
+ * Context for newcomers:
+ *   - Problem: estimate the mean and standard deviation of a Normal
+ *     distribution when both are unknown.  We build a probabilistic model for
+ *     these parameters and wish to draw posterior samples.
+ *   - Mathematical target: condition on data x_1,...,x_n ~ Normal(mu, sigma^2)
+ *     with an improper prior pi(mu,log sigma) proportional to 1.  The
+ *     log-posterior ell(mu,sigma) = -n log sigma - 0.5 sigma^{-2} sum_i (x_i -
+ *     mu)^2 provides the score vector used by the Langevin proposal.
+ *   - Why the mcmc library: the Metropolis-adjusted Langevin algorithm (MALA)
+ *     combines gradient information with random perturbations; this library
+ *     provides the carefully tuned proposal mechanics and bookkeeping needed
+ *     for the method.
+ *   - Why Eigen: gradients, parameter vectors, and proposal perturbations are
+ *     stored as Eigen vectors/matrices, letting us express the underlying
+ *     calculus in a familiar linear algebra language.
  */
 
 // $CXX -Wall -std=c++14 -O3 -mcpu=native -ffp-contract=fast -I$EIGEN_INCLUDE_PATH -I./../../include/ mala_normal.cpp -o mala_normal.out -L./../.. -lmcmc

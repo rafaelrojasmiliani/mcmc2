@@ -20,6 +20,22 @@
  
 /*
  * Sampling from a Gaussian distribution using RWMH
+ *
+ * Context for newcomers:
+ *   - Problem: infer the unknown mean of a Normal distribution when the
+ *     variance is known and we have a conjugate Normal prior on the mean.
+ *   - Mathematical target: likelihood L(mu) proportional to exp(-0.5 sigma^{-2}
+ *     sum_i (x_i - mu)^2) with prior mu ~ Normal(mu_0, sigma_0^2).  The
+ *     resulting posterior is Normal(mu_n, sigma_n^2) where sigma_n^{-2} =
+ *     n/sigma^2 + 1/sigma_0^2 and mu_n = sigma_n^2 (sum_i x_i / sigma^2 +
+ *     mu_0 / sigma_0^2), but we purposely simulate it via Metropolis to expose
+ *     the algorithmic workflow.
+ *   - Why the mcmc library: the Random-Walk Metropolis-Hastings (RWMH)
+ *     algorithm implements accept/reject logic and tuning parameters for the
+ *     proposal kernel, sparing us from writing boilerplate control flow.
+ *   - Why Eigen: even in one dimension, the sampler expects parameter vectors
+ *     and data containers compatible with Eigen so that the same interface
+ *     works in higher-dimensional models.
  */
 
 // $CXX -Wall -std=c++14 -O3 -mcpu=native -ffp-contract=fast -I$EIGEN_INCLUDE_PATH -I./../../include/ rwmh_normal_mean.cpp -o rwmh_normal_mean.out -L./../.. -lmcmc

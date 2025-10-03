@@ -20,6 +20,23 @@
  
 /*
  * Sampling from a Gaussian distribution using HMC
+ *
+ * Context for newcomers:
+ *   - Problem: infer the unknown mean and standard deviation of a Normal
+ *     distribution from simulated data.  We treat these parameters as random
+ *     variables and want samples from their joint posterior density.
+ *   - Mathematical target: observe data x_1,...,x_n ~ Normal(mu, sigma^2)
+ *     with an improper flat prior on (mu, log sigma).  The log-posterior is
+ *     ell(mu,sigma) = -n log sigma - (1/(2 sigma^2)) sum_i (x_i - mu)^2 + C,
+ *     so gradients in both parameters are available in closed form.
+ *   - Why the mcmc library: the posterior is not available in closed form
+ *     once both parameters are unknown, so we rely on Hamiltonian Monte Carlo
+ *     (HMC) implemented in this library to efficiently explore the parameter
+ *     space with gradient information.
+ *   - Why Eigen: all state vectors, gradients, and covariance calculations are
+ *     performed with Eigen matrices/vectors.  The lightweight wrappers
+ *     provided by the library translate Eigen objects into the internal
+ *     abstractions required by the samplers.
  */
 
 // $CXX -Wall -std=c++14 -O3 -mcpu=native -ffp-contract=fast -I$EIGEN_INCLUDE_PATH -I./../../include/ hmc_normal.cpp -o hmc_normal.out -L./../.. -lmcmc
@@ -55,17 +72,17 @@ double ll_dens(const Eigen::VectorXd& vals_inp, Eigen::VectorXd* grad_out, void*
     //
   
     const double ret = - n_vals * (0.5 * std::log(2*pi) + std::log(sigma)) - (x.array() - mu).pow(2).sum() / (2*sigma*sigma);
-  
+
     //
 
     if (grad_out) {
         grad_out->resize(2,1);
-  
+
         //
-  
+
         const double m_1 = (x.array() - mu).sum();
         const double m_2 = (x.array() - mu).pow(2).sum();
-  
+
         (*grad_out)(0,0) = m_1 / (sigma*sigma);
         (*grad_out)(1,0) = (m_2 / (sigma*sigma*sigma)) - ((double) n_vals) / sigma;
     }
