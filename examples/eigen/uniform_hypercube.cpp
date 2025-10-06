@@ -137,17 +137,25 @@ main()
         std::ceil(std::log(2.0 / delta) / (2.0 * epsilon * epsilon))
     );
 
+    // Random-Walk Metropolis-Hastings produces a Markov chain that only
+    // converges to the target density after an initial transient. Because of
+    // this we discard a conservative number of early iterations before
+    // measuring any expectations.
     const std::size_t n_burnin = std::max<std::size_t>(static_cast<std::size_t>(dimension * 200), n_samples / 10);
 
     Eigen::VectorXd initial_values = Eigen::VectorXd::Constant(dimension, 0.5);
 
     mcmc::algo_settings_t settings;
-    // Enable automatic truncation of proposals to the [0, 1]^n domain.
+    // RWMH proposes unconstrained Gaussian perturbations; without intervention
+    // those jumps could leave the [0, 1]^n support and force immediate
+    // rejections. Because of this we enable the library's automatic truncation
+    // so proposals are reflected back into the hypercube.
     settings.vals_bound = true;
     settings.lower_bounds = Eigen::VectorXd::Zero(dimension);
     settings.upper_bounds = Eigen::VectorXd::Ones(dimension);
-    // Burn a generous number of draws so that the chain forgets its starting
-    // point before we begin accumulating statistics.
+    // For the same reason—RWMH needs time to forget its initial state before
+    // it resembles the stationary distribution—we burn a generous number of
+    // draws before we begin accumulating statistics.
     settings.rwmh_settings.n_burnin_draws = n_burnin;
     // Match the direct Monte Carlo sample size for a fair comparison.
     settings.rwmh_settings.n_keep_draws = n_samples;
@@ -158,6 +166,8 @@ main()
     settings.rwmh_settings.cov_mat = Eigen::MatrixXd::Identity(dimension, dimension);
 
     Eigen::MatrixXd mcmc_draws;
+    // Arguments: initial state, log-density callback, matrix to receive draws,
+    // optional user data (unused here), and algorithm settings.
     mcmc::rwmh(initial_values, log_unit_hypercube_density_adapter, mcmc_draws, nullptr, settings);
 
     Eigen::MatrixXd direct_draws = draw_uniform_samples(rng, n_samples, dimension);
