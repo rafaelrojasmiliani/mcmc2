@@ -19,10 +19,12 @@
   ################################################################################*/
 
 /*
- * Verifying the RWMH sampler on a uniform distribution over the unit hypercube.
+ * Verifying the RWMH sampler on a uniform distribution over a hyperrectangle.
  *
  * Motivation for newcomers:
- *   - The unit hypercube [0, 1]^n is a prototypical bounded target density.
+ *   - Axis-aligned hyperrectangles generalise the unit hypercube to allow
+ *     dimension-specific bounds, which is a more realistic scenario for
+ *     practical models.
  *   - MCMC samplers that implement automatic bounds handling (such as the
  *     Random-Walk Metropolis-Hastings routine in MCMCLib) should be able to
  *     recover the same summary statistics as direct sampling with
@@ -49,24 +51,42 @@
 #include <optional>
 #include <random>
 #include <cstdlib>
+#include <utility>
+#include <vector>
 
 namespace
 {
 
+using Bounds = std::vector<std::pair<double, double>>;
+
 std::optional<double>
-log_unit_hypercube_density(const Eigen::VectorXd& values)
+log_hyperrectangle_density(const Eigen::VectorXd& values, const Bounds& bounds)
 {
-    if ((values.array() < 0.0).any() || (values.array() > 1.0).any()) {
+    if (bounds.size() != static_cast<std::size_t>(values.size())) {
         return std::nullopt;
+    }
+
+    for (Eigen::Index i = 0; i < values.size(); ++i) {
+        const double lower = bounds[static_cast<std::size_t>(i)].first;
+        const double upper = bounds[static_cast<std::size_t>(i)].second;
+
+        if (values(i) < lower || values(i) > upper) {
+            return std::nullopt;
+        }
     }
 
     return 0.0;
 }
 
 double
-log_unit_hypercube_density_adapter(const Eigen::VectorXd& values, void*)
+log_hyperrectangle_density_adapter(const Eigen::VectorXd& values, void* data)
 {
-    const auto maybe_log_density = log_unit_hypercube_density(values);
+    if (data == nullptr) {
+        return -std::numeric_limits<double>::infinity();
+    }
+
+    const auto* bounds = static_cast<const Bounds*>(data);
+    const auto maybe_log_density = log_hyperrectangle_density(values, *bounds);
     if (!maybe_log_density) {
         return -std::numeric_limits<double>::infinity();
     }
@@ -74,21 +94,27 @@ log_unit_hypercube_density_adapter(const Eigen::VectorXd& values, void*)
     return *maybe_log_density;
 }
 
-//! Draw iid samples from the uniform distribution on the unit hypercube.
+//! Draw iid samples from the uniform distribution on the supplied hyperrectangle.
 //!
 //! We use the standard library generator so that the reference sample shares
 //! the same source of randomness as the MCMC run.  The samples are returned in
 //! an n_samples-by-dimension matrix with one draw per row.
 Eigen::MatrixXd
-draw_uniform_samples(std::mt19937& rng, std::size_t n_samples, int dimension)
+draw_uniform_samples(std::mt19937& rng, std::size_t n_samples, const Bounds& bounds)
 {
-    std::uniform_real_distribution<double> uniform01(0.0, 1.0);
+    const int dimension = static_cast<int>(bounds.size());
 
     Eigen::MatrixXd samples(static_cast<Eigen::Index>(n_samples), dimension);
 
+    std::vector<std::uniform_real_distribution<double>> per_dimension_distributions;
+    per_dimension_distributions.reserve(bounds.size());
+    for (const auto& bound : bounds) {
+        per_dimension_distributions.emplace_back(bound.first, bound.second);
+    }
+
     for (std::size_t i = 0; i < n_samples; ++i) {
         for (int j = 0; j < dimension; ++j) {
-            samples(static_cast<Eigen::Index>(i), j) = uniform01(rng);
+            samples(static_cast<Eigen::Index>(i), j) = per_dimension_distributions[static_cast<std::size_t>(j)](rng);
         }
     }
 
@@ -130,18 +156,34 @@ main()
     std::uniform_int_distribution<int> dimension_sampler(1, 10);
     const int dimension = dimension_sampler(rng);
 
+    Bounds bounds(static_cast<std::size_t>(dimension));
+    std::uniform_real_distribution<double> lower_sampler(-1.0, 0.5);
+    std::uniform_real_distribution<double> width_sampler(0.25, 2.0);
+    double max_width = 0.0;
+
+    for (int i = 0; i < dimension; ++i) {
+        const double lower = lower_sampler(rng);
+        const double width = width_sampler(rng);
+        const double upper = lower + width;
+        bounds[static_cast<std::size_t>(i)] = std::make_pair(lower, upper);
+        max_width = std::max(max_width, width);
+    }
+
     const double epsilon = 1.0e-2; // tolerance for the empirical mean
     const double delta = 1.0e-2;   // failure probability in Hoeffding's inequality
 
     // Hoeffding's inequality bounds the deviation of the empirical mean from
-    // the true mean for iid bounded variables.  Solving
-    //   P(|\bar{X}_n - \mathbb{E}[X]| \geq \epsilon) \leq 2\exp(-2n\epsilon^2)
-    // for n shows that drawing at least
-    //   n \geq \frac{1}{2\epsilon^2} \log\left(\frac{2}{\delta}\right)
+    // the true mean for iid bounded variables.  For a scalar component confined
+    // to [a_i, b_i] the tail bound reads
+    //   P(|\bar{X}_n - \mathbb{E}[X]| \geq \epsilon) \leq 2\exp\left(-\frac{2n\epsilon^2}{(b_i - a_i)^2}\right).
+    // Solving for n shows that drawing at least
+    //   n \geq \frac{(b_i - a_i)^2}{2\epsilon^2} \log\left(\frac{2}{\delta}\right)
     // samples keeps that probability below the user-selected \delta.
-    const std::size_t n_samples = static_cast<std::size_t>(
-        std::ceil(std::log(2.0 / delta) / (2.0 * epsilon * epsilon))
-    );
+    // In this general hyperrectangle the worst-case range is the widest side,
+    // so we scale the bound by (\max_i b_i - a_i)^2.
+    const std::size_t n_samples = std::max<std::size_t>(1, static_cast<std::size_t>(
+        std::ceil((max_width * max_width) * std::log(2.0 / delta) / (2.0 * epsilon * epsilon))
+    ));
 
     // Random-Walk Metropolis-Hastings produces a Markov chain that only
     // converges to the target density after an initial transient. Because of
@@ -149,16 +191,26 @@ main()
     // measuring any expectations.
     const std::size_t n_burnin = std::max<std::size_t>(static_cast<std::size_t>(dimension * 200), n_samples / 10);
 
-    Eigen::VectorXd initial_values = Eigen::VectorXd::Constant(dimension, 0.5);
+    Eigen::VectorXd initial_values(dimension);
+    Eigen::VectorXd lower_bounds(dimension);
+    Eigen::VectorXd upper_bounds(dimension);
+
+    for (int i = 0; i < dimension; ++i) {
+        const double lower = bounds[static_cast<std::size_t>(i)].first;
+        const double upper = bounds[static_cast<std::size_t>(i)].second;
+        initial_values(i) = 0.5 * (lower + upper);
+        lower_bounds(i) = lower;
+        upper_bounds(i) = upper;
+    }
 
     mcmc::algo_settings_t settings;
     // RWMH proposes unconstrained Gaussian perturbations; without intervention
-    // those jumps could leave the [0, 1]^n support and force immediate
+    // those jumps could leave the bounded support and force immediate
     // rejections. Because of this we enable the library's automatic truncation
-    // so proposals are reflected back into the hypercube.
+    // so proposals are reflected back into the hyperrectangle.
     settings.vals_bound = true;
-    settings.lower_bounds = Eigen::VectorXd::Zero(dimension);
-    settings.upper_bounds = Eigen::VectorXd::Ones(dimension);
+    settings.lower_bounds = lower_bounds;
+    settings.upper_bounds = upper_bounds;
     // For the same reason—RWMH needs time to forget its initial state before
     // it resembles the stationary distribution—we burn a generous number of
     // draws before we begin accumulating statistics.
@@ -167,7 +219,7 @@ main()
     settings.rwmh_settings.n_keep_draws = n_samples;
     // RWMH proposes x_{t+1} = x_t + \eta where \eta ~ N(0, par_scale^2 * cov).
     // Because the perturbation size is controlled by par_scale, picking a
-    // moderately small value keeps most proposals inside the hypercube and
+    // moderately small value keeps most proposals inside the hyperrectangle and
     // leads to the textbook ~0.3 acceptance rate for random-walk samplers in
     // moderate dimensions.
     settings.rwmh_settings.par_scale = 0.35;
@@ -176,15 +228,15 @@ main()
 
     Eigen::MatrixXd mcmc_draws;
     // Arguments passed to mcmc::rwmh:
-    //   * initial_values seeds the Markov chain at the centre of the cube.
-    //   * log_unit_hypercube_density_adapter evaluates the log target density
+    //   * initial_values seeds the Markov chain at the centre of the hyperrectangle.
+    //   * log_hyperrectangle_density_adapter evaluates the log target density
     //     (returning -inf outside the support so those proposals are rejected).
     //   * mcmc_draws receives the kept samples as rows once the run finishes.
-    //   * nullptr stands in for optional user data that the callback could use.
+    //   * &bounds makes the dimension-specific bounds available to the log-density.
     //   * settings carries all tuning choices discussed above.
-    mcmc::rwmh(initial_values, log_unit_hypercube_density_adapter, mcmc_draws, nullptr, settings);
+    mcmc::rwmh(initial_values, log_hyperrectangle_density_adapter, mcmc_draws, static_cast<void*>(&bounds), settings);
 
-    Eigen::MatrixXd direct_draws = draw_uniform_samples(rng, n_samples, dimension);
+    Eigen::MatrixXd direct_draws = draw_uniform_samples(rng, n_samples, bounds);
 
     const Eigen::VectorXd mcmc_mean = mcmc_draws.colwise().mean();
     const Eigen::VectorXd direct_mean = direct_draws.colwise().mean();
@@ -195,13 +247,27 @@ main()
     const double mean_difference = (mcmc_mean - direct_mean).cwiseAbs().maxCoeff();
     const double variance_difference = (mcmc_variance - direct_variance).cwiseAbs().maxCoeff();
 
-    const Eigen::VectorXd theoretical_mean = Eigen::VectorXd::Constant(dimension, 0.5);
-    const Eigen::VectorXd theoretical_variance = Eigen::VectorXd::Constant(dimension, 1.0 / 12.0);
+    Eigen::VectorXd theoretical_mean(dimension);
+    Eigen::VectorXd theoretical_variance(dimension);
+
+    for (int i = 0; i < dimension; ++i) {
+        const double lower = bounds[static_cast<std::size_t>(i)].first;
+        const double upper = bounds[static_cast<std::size_t>(i)].second;
+        theoretical_mean(i) = 0.5 * (lower + upper);
+        const double width = upper - lower;
+        theoretical_variance(i) = (width * width) / 12.0;
+    }
 
     std::cout << std::setprecision(6) << std::fixed;
-    std::cout << "Uniform hypercube consistency check" << '\n';
+    std::cout << "Uniform hyperrectangle consistency check" << '\n';
     std::cout << "  Dimension (n): " << dimension << '\n';
     std::cout << "  Hoeffding epsilon: " << epsilon << ", delta: " << delta << '\n';
+    std::cout << "  Bounds:" << '\n';
+    for (int i = 0; i < dimension; ++i) {
+        const double lower = bounds[static_cast<std::size_t>(i)].first;
+        const double upper = bounds[static_cast<std::size_t>(i)].second;
+        std::cout << "    [" << lower << ", " << upper << "]" << '\n';
+    }
     std::cout << "  Burn-in draws: " << n_burnin << '\n';
     std::cout << "  Kept draws per method: " << n_samples << '\n';
     std::cout << "  MCMC acceptance rate: "
