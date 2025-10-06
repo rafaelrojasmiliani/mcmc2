@@ -46,20 +46,32 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <optional>
 #include <random>
 #include <cstdlib>
 
 namespace
 {
 
-double
-log_unit_hypercube_density(const Eigen::VectorXd& values, void*)
+std::optional<double>
+log_unit_hypercube_density(const Eigen::VectorXd& values)
 {
     if ((values.array() < 0.0).any() || (values.array() > 1.0).any()) {
-        return -std::numeric_limits<double>::infinity();
+        return std::nullopt;
     }
 
     return 0.0;
+}
+
+double
+log_unit_hypercube_density_adapter(const Eigen::VectorXd& values, void*)
+{
+    const auto maybe_log_density = log_unit_hypercube_density(values);
+    if (!maybe_log_density) {
+        return -std::numeric_limits<double>::infinity();
+    }
+
+    return *maybe_log_density;
 }
 
 Eigen::MatrixXd
@@ -128,7 +140,7 @@ main()
     settings.rwmh_settings.cov_mat = Eigen::MatrixXd::Identity(dimension, dimension);
 
     Eigen::MatrixXd mcmc_draws;
-    mcmc::rwmh(initial_values, log_unit_hypercube_density, mcmc_draws, nullptr, settings);
+    mcmc::rwmh(initial_values, log_unit_hypercube_density_adapter, mcmc_draws, nullptr, settings);
 
     Eigen::MatrixXd direct_draws = draw_uniform_samples(rng, n_samples, dimension);
 
