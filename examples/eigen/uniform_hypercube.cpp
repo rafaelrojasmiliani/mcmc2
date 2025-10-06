@@ -74,6 +74,11 @@ log_unit_hypercube_density_adapter(const Eigen::VectorXd& values, void*)
     return *maybe_log_density;
 }
 
+//! Draw iid samples from the uniform distribution on the unit hypercube.
+//!
+//! We use the standard library generator so that the reference sample shares
+//! the same source of randomness as the MCMC run.  The samples are returned in
+//! an n_samples-by-dimension matrix with one draw per row.
 Eigen::MatrixXd
 draw_uniform_samples(std::mt19937& rng, std::size_t n_samples, int dimension)
 {
@@ -90,6 +95,12 @@ draw_uniform_samples(std::mt19937& rng, std::size_t n_samples, int dimension)
     return samples;
 }
 
+//! Compute per-coordinate sample variances given a matrix of draws.
+//!
+//! The function accepts a pre-computed mean so that callers can keep a single
+//! pass over their samples for the summaries they need.  Variances are
+//! calculated with Bessel's correction, matching the behaviour of
+//! std::sample_variance in statistics texts.
 Eigen::VectorXd
 compute_column_variances(const Eigen::MatrixXd& samples, const Eigen::VectorXd& mean)
 {
@@ -131,12 +142,19 @@ main()
     Eigen::VectorXd initial_values = Eigen::VectorXd::Constant(dimension, 0.5);
 
     mcmc::algo_settings_t settings;
+    // Enable automatic truncation of proposals to the [0, 1]^n domain.
     settings.vals_bound = true;
     settings.lower_bounds = Eigen::VectorXd::Zero(dimension);
     settings.upper_bounds = Eigen::VectorXd::Ones(dimension);
+    // Burn a generous number of draws so that the chain forgets its starting
+    // point before we begin accumulating statistics.
     settings.rwmh_settings.n_burnin_draws = n_burnin;
+    // Match the direct Monte Carlo sample size for a fair comparison.
     settings.rwmh_settings.n_keep_draws = n_samples;
+    // A moderately small random-walk scale keeps the acceptance rate near the
+    // typical 0.3 target for RWMH in moderate dimensions.
     settings.rwmh_settings.par_scale = 0.35;
+    // Use an isotropic proposal so that all coordinates share the same scale.
     settings.rwmh_settings.cov_mat = Eigen::MatrixXd::Identity(dimension, dimension);
 
     Eigen::MatrixXd mcmc_draws;
