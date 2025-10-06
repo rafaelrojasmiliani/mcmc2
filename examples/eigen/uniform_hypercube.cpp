@@ -133,6 +133,12 @@ main()
     const double epsilon = 1.0e-2; // tolerance for the empirical mean
     const double delta = 1.0e-2;   // failure probability in Hoeffding's inequality
 
+    // Hoeffding's inequality bounds the deviation of the empirical mean from
+    // the true mean for iid bounded variables.  Solving
+    //   P(|\bar{X}_n - \mathbb{E}[X]| \geq \epsilon) \leq 2\exp(-2n\epsilon^2)
+    // for n shows that drawing at least
+    //   n \geq \frac{1}{2\epsilon^2} \log\left(\frac{2}{\delta}\right)
+    // samples keeps that probability below the user-selected \delta.
     const std::size_t n_samples = static_cast<std::size_t>(
         std::ceil(std::log(2.0 / delta) / (2.0 * epsilon * epsilon))
     );
@@ -159,15 +165,23 @@ main()
     settings.rwmh_settings.n_burnin_draws = n_burnin;
     // Match the direct Monte Carlo sample size for a fair comparison.
     settings.rwmh_settings.n_keep_draws = n_samples;
-    // A moderately small random-walk scale keeps the acceptance rate near the
-    // typical 0.3 target for RWMH in moderate dimensions.
+    // RWMH proposes x_{t+1} = x_t + \eta where \eta ~ N(0, par_scale^2 * cov).
+    // Because the perturbation size is controlled by par_scale, picking a
+    // moderately small value keeps most proposals inside the hypercube and
+    // leads to the textbook ~0.3 acceptance rate for random-walk samplers in
+    // moderate dimensions.
     settings.rwmh_settings.par_scale = 0.35;
     // Use an isotropic proposal so that all coordinates share the same scale.
     settings.rwmh_settings.cov_mat = Eigen::MatrixXd::Identity(dimension, dimension);
 
     Eigen::MatrixXd mcmc_draws;
-    // Arguments: initial state, log-density callback, matrix to receive draws,
-    // optional user data (unused here), and algorithm settings.
+    // Arguments passed to mcmc::rwmh:
+    //   * initial_values seeds the Markov chain at the centre of the cube.
+    //   * log_unit_hypercube_density_adapter evaluates the log target density
+    //     (returning -inf outside the support so those proposals are rejected).
+    //   * mcmc_draws receives the kept samples as rows once the run finishes.
+    //   * nullptr stands in for optional user data that the callback could use.
+    //   * settings carries all tuning choices discussed above.
     mcmc::rwmh(initial_values, log_unit_hypercube_density_adapter, mcmc_draws, nullptr, settings);
 
     Eigen::MatrixXd direct_draws = draw_uniform_samples(rng, n_samples, dimension);
