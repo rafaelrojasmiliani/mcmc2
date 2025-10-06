@@ -188,7 +188,12 @@ main()
     // Random-Walk Metropolis-Hastings produces a Markov chain that only
     // converges to the target density after an initial transient. Because of
     // this we discard a conservative number of early iterations before
-    // measuring any expectations.
+    // measuring any expectations.  We take the burn-in as the larger of two
+    // heuristics: (i) 200 iterations per dimension so each coordinate sees a
+    // few hundred accepted perturbations before being trusted (with the
+    // par_scale chosen above and a 0.3 acceptance rate that covers multiple
+    // traversals of the interval), and (ii) ten percent of the requested kept
+    // draws so long runs still devote enough time to reaching stationarity.
     const std::size_t n_burnin = std::max<std::size_t>(static_cast<std::size_t>(dimension * 200), n_samples / 10);
 
     Eigen::VectorXd initial_values(dimension);
