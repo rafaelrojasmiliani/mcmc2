@@ -22,7 +22,7 @@
  * Random Walk Metropolis-Hastings (RWMH) MCMC
  */
 
-#include "mcmc.hpp" 
+#include<mcmc/mcmc.hpp> 
 
 // [MCMC_BEGIN]
 mcmclib_inline

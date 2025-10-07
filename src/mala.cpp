@@ -22,7 +22,7 @@
  * Metropolis-adjusted Langevin algorithm (MALA)
  */
 
-#include "mcmc.hpp" 
+#include<mcmc/mcmc.hpp> 
 
 // [MCMC_BEGIN]
 mcmclib_inline

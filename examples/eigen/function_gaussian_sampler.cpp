@@ -55,7 +55,7 @@
 // $CXX -Wall -std=c++14 -O3 -mcpu=native -ffp-contract=fast -I$EIGEN_INCLUDE_PATH -I./../../include/ function_gaussian_sampler.cpp -o function_gaussian_sampler.out -L./../.. -lmcmc
 
 #define MCMC_ENABLE_EIGEN_WRAPPERS
-#include "mcmc.hpp"
+#include<mcmc/mcmc.hpp>
 
 #include <cmath>
 #include <iostream>

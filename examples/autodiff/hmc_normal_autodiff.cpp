@@ -25,7 +25,7 @@
 // $CXX -Wall -std=c++17 -O3 -mcpu=native -ffp-contract=fast -I$EIGEN_INCLUDE_PATH -I$AUTODIFF_INCLUDE_PATH  -I./../../include/ hmc_normal_autodiff.cpp -o hmc_normal_autodiff.out -L./../.. -lmcmc
 
 #define MCMC_ENABLE_EIGEN_WRAPPERS
-#include "mcmc.hpp"
+#include<mcmc/mcmc.hpp>
 
 #include <autodiff/forward/real.hpp>
 #include <autodiff/forward/real/eigen.hpp>

@@ -41,7 +41,7 @@
 // $CXX -Wall -std=c++14 -O3 -mcpu=native -ffp-contract=fast -I$EIGEN_INCLUDE_PATH -I./../../include/ rwmh_normal_mean.cpp -o rwmh_normal_mean.out -L./../.. -lmcmc
 
 #define MCMC_ENABLE_EIGEN_WRAPPERS
-#include "mcmc.hpp"
+#include<mcmc/mcmc.hpp>
 
 inline
 Eigen::VectorXd

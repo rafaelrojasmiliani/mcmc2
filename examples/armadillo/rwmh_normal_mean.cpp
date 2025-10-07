@@ -25,7 +25,7 @@
 // $CXX -Wall -std=c++11 -O3 -mcpu=native -ffp-contract=fast -I$ARMA_INCLUDE_PATH -I./../../include/ rwmh_normal_mean.cpp -o rwmh_normal_mean.out -L./../.. -lmcmc
 
 #define MCMC_ENABLE_ARMA_WRAPPERS
-#include "mcmc.hpp"
+#include<mcmc/mcmc.hpp>
 
 struct norm_data_t {
     double sigma;

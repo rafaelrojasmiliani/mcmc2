@@ -25,7 +25,7 @@
 // $CXX -Wall -std=c++11 -O3 -mcpu=native -ffp-contract=fast -I$ARMA_INCLUDE_PATH -I./../../include/ nuts_normal.cpp -o nuts_normal.out -L./../.. -lmcmc
 
 #define MCMC_ENABLE_ARMA_WRAPPERS
-#include "mcmc.hpp"
+#include<mcmc/mcmc.hpp>
 
 struct norm_data_t {
     arma::vec x;

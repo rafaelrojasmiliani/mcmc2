@@ -25,7 +25,7 @@
 // $CXX -Wall -std=c++11 -O3 -mcpu=native -ffp-contract=fast -I$ARMA_INCLUDE_PATH -I./../../include/ aees_mixture.cpp -o aees_mixture.out -L./../.. -lmcmc
 
 #define MCMC_ENABLE_ARMA_WRAPPERS
-#include "mcmc.hpp"
+#include<mcmc/mcmc.hpp>
 
 struct mixture_data_t { 
     arma::mat mu;

@@ -41,7 +41,7 @@
 //     uniform_hypercube.cpp -o uniform_hypercube.out -L./../.. -lmcmc
 
 #define MCMC_ENABLE_EIGEN_WRAPPERS
-#include "mcmc.hpp"
+#include<mcmc/mcmc.hpp>
 
 #include <algorithm>
 #include <cmath>

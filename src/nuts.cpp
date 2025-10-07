@@ -22,7 +22,7 @@
  * No-U-Turn Sampler (NUTS) (with Dual Averaging)
  */
 
-#include "mcmc.hpp"
+#include<mcmc/mcmc.hpp>
 
 // [MCMC_BEGIN]
 mcmclib_inline

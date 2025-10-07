@@ -22,7 +22,7 @@
  * Adaptive Equi-Energy Sampler
  */
 
-#include "mcmc.hpp"
+#include<mcmc/mcmc.hpp>
 
 // [MCMC_BEGIN]
 mcmclib_inline
