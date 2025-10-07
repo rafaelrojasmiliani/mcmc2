@@ -18,169 +18,161 @@
   ##
   ################################################################################*/
 
-#ifndef mcmc_structs_HPP
-#define mcmc_structs_HPP
+#pragma once
 
+#include <cstddef>
+#include <mcmc/misc/mcmc_options.hpp>
+namespace mcmc {
 // AEES
 
-struct aees_settings_t
-{
-    size_t n_initial_draws = 1E03;
-    size_t n_burnin_draws = 1E03;
-    size_t n_keep_draws = 1E03;
+struct aees_settings_t {
+  size_t n_initial_draws = 1E03;
+  size_t n_burnin_draws = 1E03;
+  size_t n_keep_draws = 1E03;
 
-    int omp_n_threads = -1; // numbers of threads to use
+  int omp_n_threads = -1; // numbers of threads to use
 
-    fp_t par_scale = 1.0;
-    Mat_t cov_mat;
+  fp_t par_scale = 1.0;
+  Mat_t cov_mat;
 
-    size_t n_rings = 5; // number of energy rings
-    fp_t ee_prob_par = 0.10; // equi-energy probability parameter
-    ColVec_t temper_vec; // temperature vector
+  size_t n_rings = 5;      // number of energy rings
+  fp_t ee_prob_par = 0.10; // equi-energy probability parameter
+  ColVec_t temper_vec;     // temperature vector
 };
-
 // DE
 
-struct de_settings_t
-{
-    bool jumps = false;
+struct de_settings_t {
+  bool jumps = false;
 
-    size_t n_pop = 100;
-    size_t n_burnin_draws = 1E03;
-    size_t n_keep_draws = 1E03;
+  size_t n_pop = 100;
+  size_t n_burnin_draws = 1E03;
+  size_t n_keep_draws = 1E03;
 
-    int omp_n_threads = -1; // numbers of threads to use
+  int omp_n_threads = -1; // numbers of threads to use
 
-    fp_t par_b = 1E-04;
-    fp_t par_gamma = 1.0;
-    fp_t par_gamma_jump = 2.0;
+  fp_t par_b = 1E-04;
+  fp_t par_gamma = 1.0;
+  fp_t par_gamma_jump = 2.0;
 
-    ColVec_t initial_lb; // this will default to -0.5
-    ColVec_t initial_ub; // this will default to  0.5
+  ColVec_t initial_lb; // this will default to -0.5
+  ColVec_t initial_ub; // this will default to  0.5
 
-    size_t n_accept_draws; // will be returned by the algorithm
+  size_t n_accept_draws; // will be returned by the algorithm
 };
 
 // HMC
 
-struct hmc_settings_t
-{
-    size_t n_burnin_draws = 1E03;
-    size_t n_keep_draws = 1E03;
+struct hmc_settings_t {
+  size_t n_burnin_draws = 1E03;
+  size_t n_keep_draws = 1E03;
 
-    int omp_n_threads = -1; // numbers of threads to use
+  int omp_n_threads = -1; // numbers of threads to use
 
-    size_t n_leap_steps = 1; // number of leap frog steps
-    fp_t step_size = 1.0;
-    Mat_t precond_mat;
+  size_t n_leap_steps = 1; // number of leap frog steps
+  fp_t step_size = 1.0;
+  Mat_t precond_mat;
 
-    size_t n_accept_draws; // will be returned by the function
+  size_t n_accept_draws; // will be returned by the function
 };
 
 // NUTS
 
-struct nuts_settings_t
-{
-    size_t n_burnin_draws = 1E03;
-    size_t n_keep_draws = 1E03;
+struct nuts_settings_t {
+  size_t n_burnin_draws = 1E03;
+  size_t n_keep_draws = 1E03;
 
-    int omp_n_threads = -1; // numbers of threads to use
+  int omp_n_threads = -1; // numbers of threads to use
 
-    size_t n_adapt_draws = 1E03;
-    fp_t target_accept_rate = 0.55;
+  size_t n_adapt_draws = 1E03;
+  fp_t target_accept_rate = 0.55;
 
-    size_t max_tree_depth = size_t(10);
+  size_t max_tree_depth = size_t(10);
 
-    fp_t step_size = 1.0; // \bar{\epsilon}_0
-    fp_t gamma_val = 0.05;
-    fp_t t0_val = 10;
-    fp_t kappa_val = 0.75;
-    Mat_t precond_mat;
+  fp_t step_size = 1.0; // \bar{\epsilon}_0
+  fp_t gamma_val = 0.05;
+  fp_t t0_val = 10;
+  fp_t kappa_val = 0.75;
+  Mat_t precond_mat;
 
-    size_t n_accept_draws; // will be returned by the function
+  size_t n_accept_draws; // will be returned by the function
 };
 
 // RM-HMC
 
-struct rmhmc_settings_t
-{
-    size_t n_burnin_draws = 1E03;
-    size_t n_keep_draws = 1E03;
+struct rmhmc_settings_t {
+  size_t n_burnin_draws = 1E03;
+  size_t n_keep_draws = 1E03;
 
-    int omp_n_threads = -1; // numbers of threads to use
+  int omp_n_threads = -1; // numbers of threads to use
 
-    size_t n_leap_steps = 1; // number of leap frog steps
-    fp_t step_size = 1.0;
-    Mat_t precond_mat;
+  size_t n_leap_steps = 1; // number of leap frog steps
+  fp_t step_size = 1.0;
+  Mat_t precond_mat;
 
-    size_t n_fp_steps = 5; // number of fixed point iteration steps
+  size_t n_fp_steps = 5; // number of fixed point iteration steps
 
-    size_t n_accept_draws; // will be returned by the function
+  size_t n_accept_draws; // will be returned by the function
 };
 
 // MALA
 
-struct mala_settings_t
-{
-    size_t n_burnin_draws = 1E03;
-    size_t n_keep_draws = 1E03;
+struct mala_settings_t {
+  size_t n_burnin_draws = 1E03;
+  size_t n_keep_draws = 1E03;
 
-    int omp_n_threads = -1; // numbers of threads to use
+  int omp_n_threads = -1; // numbers of threads to use
 
-    fp_t step_size = 1.0;
-    Mat_t precond_mat;
+  fp_t step_size = 1.0;
+  Mat_t precond_mat;
 
-    size_t n_accept_draws; // will be returned by the function
+  size_t n_accept_draws; // will be returned by the function
 };
 
 // RWMH
 
-struct rwmh_settings_t
-{
-    size_t n_burnin_draws = 1E03;
-    size_t n_keep_draws = 1E03;
+struct rwmh_settings_t {
+  size_t n_burnin_draws = 1E03;
+  size_t n_keep_draws = 1E03;
 
-    int omp_n_threads = -1; // numbers of threads to use
+  int omp_n_threads = -1; // numbers of threads to use
 
-    fp_t par_scale = 1.0;
-    Mat_t cov_mat;
+  fp_t par_scale = 1.0;
+  Mat_t cov_mat;
 
-    size_t n_accept_draws; // will be returned by the function
+  size_t n_accept_draws; // will be returned by the function
 };
 
-struct algo_settings_t
-{
-    // RNG seeding
+struct algo_settings_t {
+  // RNG seeding
 
-    size_t rng_seed_value = std::random_device{}();
+  size_t rng_seed_value = std::random_device{}();
 
-    // bounds 
-    
-    bool vals_bound = false;
+  // bounds
 
-    ColVec_t lower_bounds;
-    ColVec_t upper_bounds;
+  bool vals_bound = false;
 
-    // AEES
-    aees_settings_t aees_settings;
+  ColVec_t lower_bounds;
+  ColVec_t upper_bounds;
 
-    // DE
-    de_settings_t de_settings;
+  // AEES
+  aees_settings_t aees_settings;
 
-    // HMC
-    hmc_settings_t hmc_settings;
+  // DE
+  de_settings_t de_settings;
 
-    // NUTS
-    nuts_settings_t nuts_settings;
+  // HMC
+  hmc_settings_t hmc_settings;
 
-    // RM-HMC
-    rmhmc_settings_t rmhmc_settings;
+  // NUTS
+  nuts_settings_t nuts_settings;
 
-    // MALA
-    mala_settings_t mala_settings;
+  // RM-HMC
+  rmhmc_settings_t rmhmc_settings;
 
-    // RWMH
-    rwmh_settings_t rwmh_settings;
+  // MALA
+  mala_settings_t mala_settings;
+
+  // RWMH
+  rwmh_settings_t rwmh_settings;
 };
-
-#endif
+} // namespace mcmc

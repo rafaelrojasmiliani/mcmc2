@@ -17,7 +17,7 @@
   ##   limitations under the License.
   ##
   ################################################################################*/
- 
+
 /*
  * Sampling from a Gaussian distribution using RWMH
  *
@@ -38,110 +38,114 @@
  *     works in higher-dimensional models.
  */
 
-// $CXX -Wall -std=c++14 -O3 -mcpu=native -ffp-contract=fast -I$EIGEN_INCLUDE_PATH -I./../../include/ rwmh_normal_mean.cpp -o rwmh_normal_mean.out -L./../.. -lmcmc
+// $CXX -Wall -std=c++14 -O3 -mcpu=native -ffp-contract=fast
+// -I$EIGEN_INCLUDE_PATH -I./../../include/ rwmh_normal_mean.cpp -o
+// rwmh_normal_mean.out -L./../.. -lmcmc
 
 #define MCMC_ENABLE_EIGEN_WRAPPERS
-#include<mcmc/mcmc.hpp>
+#include <mcmc/misc/mcmc_structs.hpp>
+#include <mcmc/rwmh.hpp>
 
-inline
-Eigen::VectorXd
-eigen_randn_colvec(size_t nr)
-{
-    static std::mt19937 gen{ std::random_device{}() };
-    static std::normal_distribution<> dist;
+inline Eigen::VectorXd eigen_randn_colvec(size_t nr) {
+  static std::mt19937 gen{std::random_device{}()};
+  static std::normal_distribution<> dist;
 
-    return Eigen::VectorXd{ nr }.unaryExpr([&](double x) { (void)(x); return dist(gen); });
+  return Eigen::VectorXd{nr}.unaryExpr([&](double x) {
+    (void)(x);
+    return dist(gen);
+  });
 }
 
 struct norm_data_t {
-    double sigma;
-    Eigen::VectorXd x;
- 
-    double mu_0;
-    double sigma_0;
+  double sigma;
+  Eigen::VectorXd x;
+
+  double mu_0;
+  double sigma_0;
 };
 
-double ll_dens(const Eigen::VectorXd& vals_inp, void* ll_data)
-{
-    const double pi = 3.14159265358979;
+double ll_dens(const Eigen::VectorXd &vals_inp, void *ll_data) {
+  const double pi = 3.14159265358979;
 
-    //
+  //
 
-    const double mu = vals_inp(0);
- 
-    norm_data_t* dta = reinterpret_cast<norm_data_t*>(ll_data);
-    const double sigma = dta->sigma;
-    const Eigen::VectorXd x = dta->x;
- 
-    const int n_vals = x.size();
- 
-    //
- 
-    const double ret = - n_vals * (0.5 * std::log(2*pi) + std::log(sigma)) - (x.array() - mu).pow(2).sum() / (2*sigma*sigma);
- 
-    //
- 
-    return ret;
+  const double mu = vals_inp(0);
+
+  norm_data_t *dta = reinterpret_cast<norm_data_t *>(ll_data);
+  const double sigma = dta->sigma;
+  const Eigen::VectorXd x = dta->x;
+
+  const int n_vals = x.size();
+
+  //
+
+  const double ret = -n_vals * (0.5 * std::log(2 * pi) + std::log(sigma)) -
+                     (x.array() - mu).pow(2).sum() / (2 * sigma * sigma);
+
+  //
+
+  return ret;
 }
 
-double log_pr_dens(const Eigen::VectorXd& vals_inp, void* ll_data)
-{
-    const double pi = 3.14159265358979;
+double log_pr_dens(const Eigen::VectorXd &vals_inp, void *ll_data) {
+  const double pi = 3.14159265358979;
 
-    //
+  //
 
-    norm_data_t* dta = reinterpret_cast< norm_data_t* >(ll_data);
- 
-    const double mu_0 = dta->mu_0;
-    const double sigma_0 = dta->sigma_0;
- 
-    const double x = vals_inp(0);
- 
-    const double ret = - 0.5*std::log(2*pi) - std::log(sigma_0) - std::pow(x - mu_0,2) / (2*sigma_0*sigma_0);
- 
-    return ret;
+  norm_data_t *dta = reinterpret_cast<norm_data_t *>(ll_data);
+
+  const double mu_0 = dta->mu_0;
+  const double sigma_0 = dta->sigma_0;
+
+  const double x = vals_inp(0);
+
+  const double ret = -0.5 * std::log(2 * pi) - std::log(sigma_0) -
+                     std::pow(x - mu_0, 2) / (2 * sigma_0 * sigma_0);
+
+  return ret;
 }
- 
-double log_target_dens(const Eigen::VectorXd& vals_inp, void* ll_data)
-{
-    return ll_dens(vals_inp,ll_data) + log_pr_dens(vals_inp,ll_data);
+
+double log_target_dens(const Eigen::VectorXd &vals_inp, void *ll_data) {
+  return ll_dens(vals_inp, ll_data) + log_pr_dens(vals_inp, ll_data);
 }
- 
-int main()
-{
-    const int n_data = 100;
-    const double mu = 2.0;
- 
-    norm_data_t dta;
-    dta.sigma = 1.0;
-    dta.mu_0 = 1.0;
-    dta.sigma_0 = 2.0;
- 
-    Eigen::VectorXd x_dta = mu + eigen_randn_colvec(n_data).array();
-    dta.x = x_dta;
- 
-    Eigen::VectorXd initial_val(1);
-    initial_val(0) = 1.0;
 
-    //
+int main() {
+  const int n_data = 100;
+  const double mu = 2.0;
 
-    mcmc::algo_settings_t settings;
+  norm_data_t dta;
+  dta.sigma = 1.0;
+  dta.mu_0 = 1.0;
+  dta.sigma_0 = 2.0;
 
-    settings.rwmh_settings.par_scale = 0.4;
-    settings.rwmh_settings.n_burnin_draws = 2000;
-    settings.rwmh_settings.n_keep_draws = 2000;
+  Eigen::VectorXd x_dta = mu + eigen_randn_colvec(n_data).array();
+  dta.x = x_dta;
 
-    //
+  Eigen::VectorXd initial_val(1);
+  initial_val(0) = 1.0;
 
-    Eigen::MatrixXd draws_out;
-    mcmc::rwmh(initial_val, log_target_dens, draws_out, &dta, settings);
+  //
 
-    //
-  
-    std::cout << "rwmh mean:\n" << draws_out.colwise().mean() << std::endl;
-    std::cout << "acceptance rate: " << static_cast<double>(settings.rwmh_settings.n_accept_draws) / settings.rwmh_settings.n_keep_draws << std::endl;
-    
-    //
- 
-    return 0;
+  mcmc::algo_settings_t settings;
+
+  settings.rwmh_settings.par_scale = 0.4;
+  settings.rwmh_settings.n_burnin_draws = 2000;
+  settings.rwmh_settings.n_keep_draws = 2000;
+
+  //
+
+  Eigen::MatrixXd draws_out;
+  mcmc::rwmh(initial_val, log_target_dens, draws_out, &dta, settings);
+
+  //
+
+  std::cout << "rwmh mean:\n" << draws_out.colwise().mean() << std::endl;
+  std::cout << "acceptance rate: "
+            << static_cast<double>(settings.rwmh_settings.n_accept_draws) /
+                   settings.rwmh_settings.n_keep_draws
+            << std::endl;
+
+  //
+
+  return 0;
 }

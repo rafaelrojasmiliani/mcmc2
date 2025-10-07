@@ -22,15 +22,22 @@
  * Hamiltonian Monte Carlo (HMC)
  */
 
-#include <mcmc/mcmc.hpp>
+#include <mcmc/hmc.hpp>
+#include <mcmc/misc/determine_bounds_type.hpp>
+#include <mcmc/misc/inv_jacobian_adjust.hpp>
+#include <mcmc/misc/log_jacobian.hpp>
+#include <mcmc/misc/transform_vals.hpp>
+
+namespace mcmc {
 
 // [MCMC_BEGIN]
-mcmclib_inline bool mcmc::internal::hmc_impl(
-    const ColVec_t &initial_vals,
-    std::function<fp_t(const ColVec_t &vals_inp, ColVec_t *grad_out,
-                       void *target_data)>
-        target_log_kernel,
-    Mat_t &draws_out, void *target_data, algo_settings_t *settings_inp) {
+mcmclib_inline bool
+internal::hmc_impl(const ColVec_t &initial_vals,
+                   std::function<fp_t(const ColVec_t &vals_inp,
+                                      ColVec_t *grad_out, void *target_data)>
+                       target_log_kernel,
+                   Mat_t &draws_out, void *target_data,
+                   algo_settings_t *settings_inp) {
   bool success = false;
 
   const size_t n_vals = BMO_MATOPS_SIZE(initial_vals);
@@ -252,21 +259,22 @@ mcmclib_inline bool mcmc::internal::hmc_impl(
 // wrappers
 
 mcmclib_inline bool
-mcmc::hmc(const ColVec_t &initial_vals,
-          std::function<fp_t(const ColVec_t &vals_inp, ColVec_t *grad_out,
-                             void *target_data)>
-              target_log_kernel,
-          Mat_t &draws_out, void *target_data) {
+hmc(const ColVec_t &initial_vals,
+    std::function<fp_t(const ColVec_t &vals_inp, ColVec_t *grad_out,
+                       void *target_data)>
+        target_log_kernel,
+    Mat_t &draws_out, void *target_data) {
   return internal::hmc_impl(initial_vals, target_log_kernel, draws_out,
                             target_data, nullptr);
 }
 
 mcmclib_inline bool
-mcmc::hmc(const ColVec_t &initial_vals,
-          std::function<fp_t(const ColVec_t &vals_inp, ColVec_t *grad_out,
-                             void *target_data)>
-              target_log_kernel,
-          Mat_t &draws_out, void *target_data, algo_settings_t &settings) {
+hmc(const ColVec_t &initial_vals,
+    std::function<fp_t(const ColVec_t &vals_inp, ColVec_t *grad_out,
+                       void *target_data)>
+        target_log_kernel,
+    Mat_t &draws_out, void *target_data, algo_settings_t &settings) {
   return internal::hmc_impl(initial_vals, target_log_kernel, draws_out,
                             target_data, &settings);
 }
+} // namespace mcmc

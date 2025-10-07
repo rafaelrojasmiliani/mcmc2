@@ -17,40 +17,42 @@
   ##   limitations under the License.
   ##
   ################################################################################*/
- 
+
+#pragma once
+#include <mcmc/misc/mcmc_options.hpp>
+#include <mcmc/misc/mcmc_structs.hpp>
+
+namespace mcmc {
 /*
  * inverse Jacobian adjustment
  */
 
-inline
-Mat_t
-inv_jacobian_adjust(
-    const ColVec_t& vals_trans_inp, 
-    const ColVecInt_t& bounds_type, 
-    const ColVec_t& lower_bounds, 
-    const ColVec_t& upper_bounds
-)
-{
-    const size_t n_vals = BMO_MATOPS_SIZE(bounds_type);
+inline Mat_t inv_jacobian_adjust(const ColVec_t &vals_trans_inp,
+                                 const ColVecInt_t &bounds_type,
+                                 const ColVec_t &lower_bounds,
+                                 const ColVec_t &upper_bounds) {
+  const size_t n_vals = BMO_MATOPS_SIZE(bounds_type);
 
-    Mat_t ret_mat = BMO_MATOPS_EYE(n_vals);
+  Mat_t ret_mat = BMO_MATOPS_EYE(n_vals);
 
-    for (size_t i = 0; i < n_vals; ++i) {
-        switch (bounds_type(i)) {
-            case 2: // lower bound only
-                // ret_mat(i,i) = 1 / std::exp(vals_trans_inp(i));
-                ret_mat(i,i) = std::exp(-vals_trans_inp(i));
-                break;
-            case 3: // upper bound only
-                // ret_mat(i,i) = 1 / std::exp(-vals_trans_inp(i));
-                ret_mat(i,i) = std::exp(vals_trans_inp(i));
-                break;
-            case 4: // upper and lower bounds
-                const fp_t exp_inp = std::exp(vals_trans_inp(i));
-                ret_mat(i,i) = ( (exp_inp + 1) * (exp_inp + 1) ) / ( exp_inp * (upper_bounds(i) - lower_bounds(i)) );
-                break;
-        }
+  for (size_t i = 0; i < n_vals; ++i) {
+    switch (bounds_type(i)) {
+    case 2: // lower bound only
+      // ret_mat(i,i) = 1 / std::exp(vals_trans_inp(i));
+      ret_mat(i, i) = std::exp(-vals_trans_inp(i));
+      break;
+    case 3: // upper bound only
+      // ret_mat(i,i) = 1 / std::exp(-vals_trans_inp(i));
+      ret_mat(i, i) = std::exp(vals_trans_inp(i));
+      break;
+    case 4: // upper and lower bounds
+      const fp_t exp_inp = std::exp(vals_trans_inp(i));
+      ret_mat(i, i) = ((exp_inp + 1) * (exp_inp + 1)) /
+                      (exp_inp * (upper_bounds(i) - lower_bounds(i)));
+      break;
     }
+  }
 
-    return ret_mat;
+  return ret_mat;
 }
+} // namespace mcmc

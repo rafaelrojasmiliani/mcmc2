@@ -25,26 +25,24 @@
 #ifndef MCMC_STATS_INCLUDE
 #define MCMC_STATS_INCLUDE
 
+#include <type_traits>
 #ifndef MCMC_LOG_2PI
-    #define MCMC_LOG_2PI 1.83787706640934548356L
+#define MCMC_LOG_2PI 1.83787706640934548356L
 #endif
 
-namespace stats_mcmc
-{
+namespace mcmc::stats_mcmc {
 
-template<typename T>
-using return_t = typename std::conditional<std::is_integral<T>::value,double,T>::type;
+template <typename T>
+using return_t =
+    typename std::conditional<std::is_integral<T>::value, double, T>::type;
 
-template<typename ...T>
-using common_t = typename std::common_type<T...>::type;
+template <typename... T> using common_t = typename std::common_type<T...>::type;
 
-template<typename ...T>
-using common_return_t = return_t<common_t<T...>>;
+template <typename... T> using common_return_t = return_t<common_t<T...>>;
 
-#include "dnorm.hpp"
+} // namespace mcmc::stats_mcmc
 #include "dmvnorm.hpp"
-
-}
+#include "dnorm.hpp"
 
 #include "seed_values.hpp"
 

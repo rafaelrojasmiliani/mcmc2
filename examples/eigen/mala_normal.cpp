@@ -44,7 +44,8 @@
 
 #undef MCMC_ENABLE_EIGEN_WRAPPERS
 #define MCMC_ENABLE_EIGEN_WRAPPERS
-#include<mcmc/mcmc.hpp>
+#include <mcmc/mala.hpp>
+#include <mcmc/misc/mcmc_structs.hpp>
 
 inline Eigen::VectorXd eigen_randn_colvec(size_t nr) {
   static std::mt19937 gen{std::random_device{}()};

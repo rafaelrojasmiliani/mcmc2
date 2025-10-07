@@ -17,80 +17,73 @@
   ##   limitations under the License.
   ##
   ################################################################################*/
- 
+
+#pragma once
+#include <mcmc/misc/mcmc_options.hpp>
+#include <mcmc/misc/mcmc_structs.hpp>
+
+namespace mcmc {
 /*
  * Metropolis-adjusted Langevin algorithm
  */
 
-#ifndef _mcmc_mala_HPP
-#define _mcmc_mala_HPP
-
-
 /**
  * @brief The Metropolis-adjusted Langevin Algorithm (MALA)
  *
  * @param initial_vals a column vector of initial values.
- * @param target_log_kernel the log posterior kernel function of the target distribution, taking three arguments:
+ * @param target_log_kernel the log posterior kernel function of the target
+ * distribution, taking three arguments:
  *   - \c vals_inp a vector of inputs; and
  *   - \c grad_out a vector to store the gradient; and
  *   - \c target_data additional data passed to the user-provided function.
- * @param draws_out a matrix of posterior draws, where each row represents one draw.
+ * @param draws_out a matrix of posterior draws, where each row represents one
+ * draw.
  * @param target_data additional data passed to the user-provided function.
  *
  * @return a boolean value indicating successful completion of the algorithm.
- */ 
+ */
 
-bool
-mala(
-    const ColVec_t& initial_vals, 
-    std::function<fp_t (const ColVec_t& vals_inp, ColVec_t* grad_out, void* target_data)> target_log_kernel, 
-    Mat_t& draws_out, 
-    void* target_data
-);
+bool mala(const ColVec_t &initial_vals,
+          std::function<fp_t(const ColVec_t &vals_inp, ColVec_t *grad_out,
+                             void *target_data)>
+              target_log_kernel,
+          Mat_t &draws_out, void *target_data);
 
 /**
  * @brief The Metropolis-adjusted Langevin Algorithm (MALA)
  *
  * @param initial_vals a column vector of initial values.
- * @param target_log_kernel the log posterior kernel function of the target distribution, taking three arguments:
+ * @param target_log_kernel the log posterior kernel function of the target
+ * distribution, taking three arguments:
  *   - \c vals_inp a vector of inputs; and
  *   - \c grad_out a vector to store the gradient; and
  *   - \c target_data additional data passed to the user-provided function.
- * @param draws_out a matrix of posterior draws, where each row represents one draw.
+ * @param draws_out a matrix of posterior draws, where each row represents one
+ * draw.
  * @param target_data additional data passed to the user-provided function.
  * @param settings parameters controlling the MCMC routine.
  *
  * @return a boolean value indicating successful completion of the algorithm.
- */ 
+ */
 
-bool
-mala(
-    const ColVec_t& initial_vals, 
-    std::function<fp_t (const ColVec_t& vals_inp, ColVec_t* grad_out, void* target_data)> target_log_kernel, 
-    Mat_t& draws_out, 
-    void* target_data, 
-    algo_settings_t& settings
-);
+bool mala(const ColVec_t &initial_vals,
+          std::function<fp_t(const ColVec_t &vals_inp, ColVec_t *grad_out,
+                             void *target_data)>
+              target_log_kernel,
+          Mat_t &draws_out, void *target_data, algo_settings_t &settings);
 
+namespace internal {
 
-namespace internal
-{
+bool mala_impl(const ColVec_t &initial_vals,
+               std::function<fp_t(const ColVec_t &vals_inp, ColVec_t *grad_out,
+                                  void *target_data)>
+                   target_log_kernel,
+               Mat_t &draws_out, void *target_data,
+               algo_settings_t *settings_inp);
 
-bool
-mala_impl(
-    const ColVec_t& initial_vals, 
-    std::function<fp_t (const ColVec_t& vals_inp, ColVec_t* grad_out, void* target_data)> target_log_kernel, 
-    Mat_t& draws_out, 
-    void* target_data, 
-    algo_settings_t* settings_inp
-);
-
-#include "mala.ipp"
-
-}
+} // namespace internal
 
 //
 
-
-
-#endif
+} // namespace mcmc
+#include "mala.ipp"

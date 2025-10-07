@@ -18,39 +18,41 @@
   ##
   ################################################################################*/
 
+#pragma once
+#include <mcmc/misc/mcmc_options.hpp>
+#include <mcmc/misc/mcmc_structs.hpp>
+#include <mcmc/stats/mcmc_stats.hpp>
+
+namespace mcmc::stats_mcmc {
 /*
  * pdf of the Multivariate Normal distribution
  */
 
-#ifndef MCMC_STATS_DMVNORM
-#define MCMC_STATS_DMVNORM
+inline fp_t dmvnorm(const ColVec_t &X, const ColVec_t &mu_par,
+                    const Mat_t &Sigma_par, bool log_form) {
+  const size_t K = BMO_MATOPS_SIZE(X);
 
-inline
-fp_t
-dmvnorm(const ColVec_t& X, const ColVec_t& mu_par, const Mat_t& Sigma_par, bool log_form)
-{
-    const size_t K = BMO_MATOPS_SIZE(X);
+  //
 
-    //
+  const fp_t cons_term = -fp_t(0.5) * K * fp_t(MCMC_LOG_2PI);
+  const ColVec_t X_cent =
+      X - mu_par; // avoids issues like Mat vs eGlue in templates
 
-    const fp_t cons_term = - fp_t(0.5) * K * fp_t(MCMC_LOG_2PI);
-    const ColVec_t X_cent = X - mu_par; // avoids issues like Mat vs eGlue in templates
+  const fp_t quad_term = BMO_MATOPS_QUAD_FORM_INV(X_cent, Sigma_par);
 
-    const fp_t quad_term = BMO_MATOPS_QUAD_FORM_INV(X_cent, Sigma_par);
-    
-    fp_t ret = cons_term - fp_t(0.5) * ( BMO_MATOPS_LOG_DET(Sigma_par) + quad_term );
+  fp_t ret =
+      cons_term - fp_t(0.5) * (BMO_MATOPS_LOG_DET(Sigma_par) + quad_term);
 
-    if (!log_form) {
-        ret = std::exp(ret);
-        
-        if (std::isinf(ret)) {
-            ret = std::numeric_limits<fp_t>::max();
-        }
+  if (!log_form) {
+    ret = std::exp(ret);
+
+    if (std::isinf(ret)) {
+      ret = std::numeric_limits<fp_t>::max();
     }
+  }
 
-    //
-    
-    return ret;
+  //
+
+  return ret;
 }
-
-#endif
+} // namespace mcmc::stats_mcmc

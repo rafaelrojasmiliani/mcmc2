@@ -17,7 +17,7 @@
   ##   limitations under the License.
   ##
   ################################################################################*/
- 
+
 /*
  * Sampling from a Gaussian distribution using HMC
  *
@@ -39,97 +39,104 @@
  *     abstractions required by the samplers.
  */
 
-// $CXX -Wall -std=c++14 -O3 -mcpu=native -ffp-contract=fast -I$EIGEN_INCLUDE_PATH -I./../../include/ hmc_normal.cpp -o hmc_normal.out -L./../.. -lmcmc
+// $CXX -Wall -std=c++14 -O3 -mcpu=native -ffp-contract=fast
+// -I$EIGEN_INCLUDE_PATH -I./../../include/ hmc_normal.cpp -o hmc_normal.out
+// -L./../.. -lmcmc
 
 #define MCMC_ENABLE_EIGEN_WRAPPERS
-#include<mcmc/mcmc.hpp>
+#include <mcmc/hmc.hpp>
+#include <mcmc/misc/mcmc_structs.hpp>
 
-inline
-Eigen::VectorXd
-eigen_randn_colvec(size_t nr)
-{
-    static std::mt19937 gen{ std::random_device{}() };
-    static std::normal_distribution<> dist;
+inline Eigen::VectorXd eigen_randn_colvec(size_t nr) {
+  static std::mt19937 gen{std::random_device{}()};
+  static std::normal_distribution<> dist;
 
-    return Eigen::VectorXd{ nr }.unaryExpr([&](double x) { (void)(x); return dist(gen); });
+  return Eigen::VectorXd{nr}.unaryExpr([&](double x) {
+    (void)(x);
+    return dist(gen);
+  });
 }
 
 struct norm_data_t {
-    Eigen::VectorXd x;
+  Eigen::VectorXd x;
 };
-  
-double ll_dens(const Eigen::VectorXd& vals_inp, Eigen::VectorXd* grad_out, void* ll_data)
-{
-    const double pi = 3.14159265358979;
 
-    const double mu    = vals_inp(0);
-    const double sigma = vals_inp(1);
-  
-    norm_data_t* dta = reinterpret_cast<norm_data_t*>(ll_data);
-    const Eigen::VectorXd x = dta->x;
-    const int n_vals = x.size();
-  
+double ll_dens(const Eigen::VectorXd &vals_inp, Eigen::VectorXd *grad_out,
+               void *ll_data) {
+  const double pi = 3.14159265358979;
+
+  const double mu = vals_inp(0);
+  const double sigma = vals_inp(1);
+
+  norm_data_t *dta = reinterpret_cast<norm_data_t *>(ll_data);
+  const Eigen::VectorXd x = dta->x;
+  const int n_vals = x.size();
+
+  //
+
+  const double ret = -n_vals * (0.5 * std::log(2 * pi) + std::log(sigma)) -
+                     (x.array() - mu).pow(2).sum() / (2 * sigma * sigma);
+
+  //
+
+  if (grad_out) {
+    grad_out->resize(2, 1);
+
     //
-  
-    const double ret = - n_vals * (0.5 * std::log(2*pi) + std::log(sigma)) - (x.array() - mu).pow(2).sum() / (2*sigma*sigma);
 
-    //
+    const double m_1 = (x.array() - mu).sum();
+    const double m_2 = (x.array() - mu).pow(2).sum();
 
-    if (grad_out) {
-        grad_out->resize(2,1);
+    (*grad_out)(0, 0) = m_1 / (sigma * sigma);
+    (*grad_out)(1, 0) =
+        (m_2 / (sigma * sigma * sigma)) - ((double)n_vals) / sigma;
+  }
 
-        //
+  //
 
-        const double m_1 = (x.array() - mu).sum();
-        const double m_2 = (x.array() - mu).pow(2).sum();
-
-        (*grad_out)(0,0) = m_1 / (sigma*sigma);
-        (*grad_out)(1,0) = (m_2 / (sigma*sigma*sigma)) - ((double) n_vals) / sigma;
-    }
-  
-    //
-  
-    return ret;
-}
-  
-double log_target_dens(const Eigen::VectorXd& vals_inp, Eigen::VectorXd* grad_out, void* ll_data)
-{
-    return ll_dens(vals_inp,grad_out,ll_data);
+  return ret;
 }
 
-int main()
-{
-    const int n_data = 1000;
+double log_target_dens(const Eigen::VectorXd &vals_inp,
+                       Eigen::VectorXd *grad_out, void *ll_data) {
+  return ll_dens(vals_inp, grad_out, ll_data);
+}
 
-    const double mu = 2.0;
-    const double sigma = 2.0;
-  
-    norm_data_t dta;
-  
-    Eigen::VectorXd x_dta = mu + sigma * eigen_randn_colvec(n_data).array();
-    dta.x = x_dta;
-  
-    Eigen::VectorXd initial_val(2);
-    initial_val(0) = mu + 1; // mu
-    initial_val(1) = sigma + 1; // sigma
-  
-    mcmc::algo_settings_t settings;
-  
-    settings.hmc_settings.step_size = 0.08;
-    settings.hmc_settings.n_burnin_draws = 2000;
-    settings.hmc_settings.n_keep_draws = 2000;
+int main() {
+  const int n_data = 1000;
 
-    //
-  
-    Eigen::MatrixXd draws_out;
-    mcmc::hmc(initial_val, log_target_dens, draws_out, &dta, settings);
+  const double mu = 2.0;
+  const double sigma = 2.0;
 
-    //
-  
-    std::cout << "hmc mean:\n" << draws_out.colwise().mean() << std::endl;
-    std::cout << "acceptance rate: " << static_cast<double>(settings.hmc_settings.n_accept_draws) / settings.hmc_settings.n_keep_draws << std::endl;
+  norm_data_t dta;
 
-    //
- 
-    return 0;
+  Eigen::VectorXd x_dta = mu + sigma * eigen_randn_colvec(n_data).array();
+  dta.x = x_dta;
+
+  Eigen::VectorXd initial_val(2);
+  initial_val(0) = mu + 1;    // mu
+  initial_val(1) = sigma + 1; // sigma
+
+  mcmc::algo_settings_t settings;
+
+  settings.hmc_settings.step_size = 0.08;
+  settings.hmc_settings.n_burnin_draws = 2000;
+  settings.hmc_settings.n_keep_draws = 2000;
+
+  //
+
+  Eigen::MatrixXd draws_out;
+  mcmc::hmc(initial_val, log_target_dens, draws_out, &dta, settings);
+
+  //
+
+  std::cout << "hmc mean:\n" << draws_out.colwise().mean() << std::endl;
+  std::cout << "acceptance rate: "
+            << static_cast<double>(settings.hmc_settings.n_accept_draws) /
+                   settings.hmc_settings.n_keep_draws
+            << std::endl;
+
+  //
+
+  return 0;
 }

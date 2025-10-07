@@ -22,28 +22,28 @@
  * check and impose sampling bounds for DE
  */
 
-inline
-void
-sampling_bounds_check(
-    const bool vals_bound,
-    const size_t n_vals,
-    const ColVecInt_t bounds_type,
-    const ColVec_t& hard_lower_bounds, 
-    const ColVec_t& hard_upper_bounds,
-    ColVec_t& sampling_lower_bounds,
-    ColVec_t& sampling_upper_bounds
-)
-{
-    if (vals_bound) {
-        for (size_t i = 0; i < n_vals; ++i) {
-            if (bounds_type(i) == 4 || bounds_type(i) == 2) {
-                // lower and upper bound imposed || lower bound only
-                sampling_lower_bounds(i) = std::max( hard_lower_bounds(i), sampling_lower_bounds(i) );
-            }
-            if (bounds_type(i) == 4 || bounds_type(i) == 3) {
-                // lower and upper bound imposed || upper bound only
-                sampling_upper_bounds(i) = std::min( hard_upper_bounds(i), sampling_upper_bounds(i) );
-            }
-        }
+#pragma once
+#include <mcmc/misc/mcmc_options.hpp>
+namespace mcmc {
+inline void sampling_bounds_check(const bool vals_bound, const size_t n_vals,
+                                  const ColVecInt_t bounds_type,
+                                  const ColVec_t &hard_lower_bounds,
+                                  const ColVec_t &hard_upper_bounds,
+                                  ColVec_t &sampling_lower_bounds,
+                                  ColVec_t &sampling_upper_bounds) {
+  if (vals_bound) {
+    for (size_t i = 0; i < n_vals; ++i) {
+      if (bounds_type(i) == 4 || bounds_type(i) == 2) {
+        // lower and upper bound imposed || lower bound only
+        sampling_lower_bounds(i) =
+            std::max(hard_lower_bounds(i), sampling_lower_bounds(i));
+      }
+      if (bounds_type(i) == 4 || bounds_type(i) == 3) {
+        // lower and upper bound imposed || upper bound only
+        sampling_upper_bounds(i) =
+            std::min(hard_upper_bounds(i), sampling_upper_bounds(i));
+      }
     }
+  }
 }
+} // namespace mcmc

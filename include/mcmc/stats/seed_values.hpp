@@ -17,16 +17,13 @@
   ##   limitations under the License.
   ##
   ################################################################################*/
-
-#ifndef MCMCLIB_STATS_SEED_VALUES
-#define MCMCLIB_STATS_SEED_VALUES
-
-inline
-size_t
-generate_seed_value(const int ind_inp, const int n_threads, rand_engine_t& rand_engine)
-{
-    return static_cast<size_t>( (bmo::stats::runif<fp_t>(rand_engine) + ind_inp + n_threads) * 1000 );
-    // return static_cast<size_t>( (ind_inp + n_threads) * 1000 );
+#pragma once
+#include <mcmc/misc/mcmc_options.hpp>
+namespace mcmc {
+inline size_t generate_seed_value(const int ind_inp, const int n_threads,
+                                  rand_engine_t &rand_engine) {
+  return static_cast<size_t>(
+      (bmo::stats::runif<fp_t>(rand_engine) + ind_inp + n_threads) * 1000);
+  // return static_cast<size_t>( (ind_inp + n_threads) * 1000 );
 }
-
-#endif
+} // namespace mcmc

@@ -17,42 +17,43 @@
   ##   limitations under the License.
   ##
   ################################################################################*/
- 
+#pragma once
+
+#include <mcmc/misc/mcmc_options.hpp>
+namespace mcmc {
 /*
  * log Jacobian adjustment
  */
 
-inline
-fp_t
-log_jacobian(
-    const ColVec_t& vals_trans_inp, 
-    const ColVecInt_t& bounds_type, 
-    const ColVec_t& lower_bounds, 
-    const ColVec_t& upper_bounds
-)
-{
-    const size_t n_vals = BMO_MATOPS_SIZE(bounds_type);
+inline fp_t log_jacobian(const ColVec_t &vals_trans_inp,
+                         const ColVecInt_t &bounds_type,
+                         const ColVec_t &lower_bounds,
+                         const ColVec_t &upper_bounds) {
+  const size_t n_vals = BMO_MATOPS_SIZE(bounds_type);
 
-    fp_t ret_val = 0.0;
+  fp_t ret_val = 0.0;
 
-    for (size_t i = 0; i < n_vals; ++i) {
-        switch (bounds_type(i)) {
-            case 2: // lower bound only
-                ret_val += vals_trans_inp(i);
-                break;
-            case 3: // upper bound only
-                ret_val += - vals_trans_inp(i);
-                break;
-            case 4: // upper and lower bounds
-                double exp_inp = std::exp(vals_trans_inp(i));
-                if (std::isfinite(exp_inp)) {
-                    ret_val += std::log(upper_bounds(i) - lower_bounds(i)) + vals_trans_inp(i) - 2 * std::log(1 + exp_inp);
-                } else {
-                    ret_val += std::log(upper_bounds(i) - lower_bounds(i)) - vals_trans_inp(i);
-                }
-                break;
-        }
+  for (size_t i = 0; i < n_vals; ++i) {
+    switch (bounds_type(i)) {
+    case 2: // lower bound only
+      ret_val += vals_trans_inp(i);
+      break;
+    case 3: // upper bound only
+      ret_val += -vals_trans_inp(i);
+      break;
+    case 4: // upper and lower bounds
+      double exp_inp = std::exp(vals_trans_inp(i));
+      if (std::isfinite(exp_inp)) {
+        ret_val += std::log(upper_bounds(i) - lower_bounds(i)) +
+                   vals_trans_inp(i) - 2 * std::log(1 + exp_inp);
+      } else {
+        ret_val +=
+            std::log(upper_bounds(i) - lower_bounds(i)) - vals_trans_inp(i);
+      }
+      break;
     }
-    
-    return ret_val;
+  }
+
+  return ret_val;
 }
+} // namespace mcmc

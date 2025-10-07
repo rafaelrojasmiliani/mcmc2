@@ -17,56 +17,58 @@
   ##   limitations under the License.
   ##
   ################################################################################*/
- 
+
 /*
  * Metropolis-adjusted Langevin algorithm
  */
 
-#ifndef _mcmc_mala_IPP
-#define _mcmc_mala_IPP
+#pragma once
+#include <mcmc/misc/mcmc_options.hpp>
+#include <mcmc/misc/mcmc_structs.hpp>
+#include <mcmc/stats/dmvnorm.hpp>
+//
+namespace mcmc::internal {
+inline fp_t mala_prop_adjustment(
+    const ColVec_t &prop_vals, const ColVec_t &prev_vals, const fp_t step_size,
+    const bool vals_bound, const Mat_t &precond_mat,
+    std::function<ColVec_t(const ColVec_t &vals_inp, void *target_data,
+                           const fp_t step_size, Mat_t *jacob_matrix_out)>
+        mala_mean_fn,
+    void *target_data) {
 
-// 
+  fp_t ret_val = 0;
+  const fp_t step_size_sq = step_size * step_size;
 
-inline
-fp_t
-mala_prop_adjustment(
-    const ColVec_t& prop_vals, 
-    const ColVec_t& prev_vals, 
-    const fp_t step_size, 
-    const bool vals_bound, 
-    const Mat_t& precond_mat, 
-    std::function<ColVec_t (const ColVec_t& vals_inp, void* target_data, const fp_t step_size, Mat_t* jacob_matrix_out)> mala_mean_fn, 
-    void* target_data
-)
-{
+  //
 
-    fp_t ret_val = 0;
-    const fp_t step_size_sq = step_size * step_size;
+  if (vals_bound) {
+    Mat_t prop_inv_jacob, prev_inv_jacob;
 
-    //
+    ColVec_t prop_mean =
+        mala_mean_fn(prop_vals, target_data, step_size, &prop_inv_jacob);
+    ColVec_t prev_mean =
+        mala_mean_fn(prev_vals, target_data, step_size, &prev_inv_jacob);
 
-    if (vals_bound) 
-    {
-        Mat_t prop_inv_jacob, prev_inv_jacob;
+    ret_val =
+        stats_mcmc::dmvnorm(prev_vals, prop_mean,
+                            step_size_sq * prop_inv_jacob * precond_mat, true) -
+        stats_mcmc::dmvnorm(prop_vals, prev_mean,
+                            step_size_sq * prop_inv_jacob * precond_mat, true);
+  } else {
+    ColVec_t prop_mean =
+        mala_mean_fn(prop_vals, target_data, step_size, nullptr);
+    ColVec_t prev_mean =
+        mala_mean_fn(prev_vals, target_data, step_size, nullptr);
 
-        ColVec_t prop_mean = mala_mean_fn(prop_vals, target_data, step_size, &prop_inv_jacob);
-        ColVec_t prev_mean = mala_mean_fn(prev_vals, target_data, step_size, &prev_inv_jacob);
+    ret_val = stats_mcmc::dmvnorm(prev_vals, prop_mean,
+                                  step_size_sq * precond_mat, true) -
+              stats_mcmc::dmvnorm(prop_vals, prev_mean,
+                                  step_size_sq * precond_mat, true);
+  }
 
-        ret_val = stats_mcmc::dmvnorm(prev_vals, prop_mean, step_size_sq*prop_inv_jacob*precond_mat, true) \
-                  - stats_mcmc::dmvnorm(prop_vals, prev_mean, step_size_sq*prop_inv_jacob*precond_mat, true);
-    }
-    else
-    {
-        ColVec_t prop_mean = mala_mean_fn(prop_vals, target_data, step_size, nullptr);
-        ColVec_t prev_mean = mala_mean_fn(prev_vals, target_data, step_size, nullptr);
+  //
 
-        ret_val = stats_mcmc::dmvnorm(prev_vals, prop_mean, step_size_sq*precond_mat, true) \
-                  - stats_mcmc::dmvnorm(prop_vals, prev_mean, step_size_sq*precond_mat, true);
-    }
-
-    //
-
-    return ret_val;
+  return ret_val;
 }
 
-#endif
+} // namespace mcmc::internal

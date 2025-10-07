@@ -17,41 +17,42 @@
   ##   limitations under the License.
   ##
   ################################################################################*/
- 
+
 /*
  * Determine the upper-lower bounds combo type
  */
 
 // note: std::isfinite is not true for: NaN, -Inf, or +Inf
+#pragma once
+#include <mcmc/misc/mcmc_options.hpp>
+namespace mcmc {
+inline ColVecInt_t determine_bounds_type(const bool vals_bound,
+                                         const size_t n_vals,
+                                         const ColVec_t &lower_bounds,
+                                         const ColVec_t &upper_bounds) {
+  ColVecInt_t ret_vec(n_vals);
 
-inline
-ColVecInt_t
-determine_bounds_type(
-    const bool vals_bound, 
-    const size_t n_vals, 
-    const ColVec_t& lower_bounds, 
-    const ColVec_t& upper_bounds)
-{
-    ColVecInt_t ret_vec(n_vals);
+  BMO_MATOPS_SET_VALUES_SCALAR(ret_vec, 1); // base case: 1 - no bounds imposed
 
-    BMO_MATOPS_SET_VALUES_SCALAR(ret_vec, 1); // base case: 1 - no bounds imposed
-
-    if (vals_bound) {
-        for (size_t i = 0; i < n_vals; ++i) {
-            if ( std::isfinite(lower_bounds(i)) && std::isfinite(upper_bounds(i)) ) {
-                // lower and upper bound imposed
-                ret_vec(i) = 4;
-            } else if ( std::isfinite(lower_bounds(i)) && !std::isfinite(upper_bounds(i)) ) {
-                // lower bound only
-                ret_vec(i) = 2;
-            } else if ( !std::isfinite(lower_bounds(i)) && std::isfinite(upper_bounds(i)) ) {
-                // upper bound only
-                ret_vec(i) = 3;
-            }
-        }
+  if (vals_bound) {
+    for (size_t i = 0; i < n_vals; ++i) {
+      if (std::isfinite(lower_bounds(i)) && std::isfinite(upper_bounds(i))) {
+        // lower and upper bound imposed
+        ret_vec(i) = 4;
+      } else if (std::isfinite(lower_bounds(i)) &&
+                 !std::isfinite(upper_bounds(i))) {
+        // lower bound only
+        ret_vec(i) = 2;
+      } else if (!std::isfinite(lower_bounds(i)) &&
+                 std::isfinite(upper_bounds(i))) {
+        // upper bound only
+        ret_vec(i) = 3;
+      }
     }
+  }
 
-    //
-    
-    return ret_vec;
+  //
+
+  return ret_vec;
 }
+} // namespace mcmc

@@ -17,74 +17,69 @@
   ##   limitations under the License.
   ##
   ################################################################################*/
- 
+
 /*
  * Hamiltonian Monte Carlo
  */
 
-#ifndef _mcmc_hmc_HPP
-#define _mcmc_hmc_HPP
+#pragma once
+#include <mcmc/misc/mcmc_options.hpp>
+#include <mcmc/misc/mcmc_structs.hpp>
 
+namespace mcmc {
 /**
  * @brief The Hamiltonian Monte Carlo (HMC) MCMC Algorithm
  *
  * @param initial_vals a column vector of initial values.
- * @param target_log_kernel the log posterior kernel function of the target distribution, taking three arguments:
+ * @param target_log_kernel the log posterior kernel function of the target
+ * distribution, taking three arguments:
  *   - \c vals_inp a vector of inputs; and
  *   - \c grad_out a vector to store the gradient; and
  *   - \c target_data additional data passed to the user-provided function.
- * @param draws_out a matrix of posterior draws, where each row represents one draw.
+ * @param draws_out a matrix of posterior draws, where each row represents one
+ * draw.
  * @param target_data additional data passed to the user-provided function.
  *
  * @return a boolean value indicating successful completion of the algorithm.
- */ 
+ */
 
-bool
-hmc(
-    const ColVec_t& initial_vals, 
-    std::function<fp_t (const ColVec_t& vals_inp, ColVec_t* grad_out, void* target_data)> target_log_kernel, 
-    Mat_t& draws_out, 
-    void* target_data
-);
+bool hmc(const ColVec_t &initial_vals,
+         std::function<fp_t(const ColVec_t &vals_inp, ColVec_t *grad_out,
+                            void *target_data)>
+             target_log_kernel,
+         Mat_t &draws_out, void *target_data);
 
 /**
  * @brief The Hamiltonian Monte Carlo (HMC) MCMC Algorithm
  *
  * @param initial_vals a column vector of initial values.
- * @param target_log_kernel the log posterior kernel function of the target distribution, taking three arguments:
+ * @param target_log_kernel the log posterior kernel function of the target
+ * distribution, taking three arguments:
  *   - \c vals_inp a vector of inputs; and
  *   - \c grad_out a vector to store the gradient; and
  *   - \c target_data additional data passed to the user-provided function.
- * @param draws_out a matrix of posterior draws, where each row represents one draw.
+ * @param draws_out a matrix of posterior draws, where each row represents one
+ * draw.
  * @param target_data additional data passed to the user-provided function.
  * @param settings parameters controlling the MCMC routine.
  *
  * @return a boolean value indicating successful completion of the algorithm.
- */ 
+ */
 
-bool
-hmc(
-    const ColVec_t& initial_vals, 
-    std::function<fp_t (const ColVec_t& vals_inp, ColVec_t* grad_out, void* target_data)> target_log_kernel, 
-    Mat_t& draws_out, 
-    void* target_data, 
-    algo_settings_t& settings
-);
+bool hmc(const ColVec_t &initial_vals,
+         std::function<fp_t(const ColVec_t &vals_inp, ColVec_t *grad_out,
+                            void *target_data)>
+             target_log_kernel,
+         Mat_t &draws_out, void *target_data, algo_settings_t &settings);
 
+namespace internal {
 
-namespace internal
-{
-
-bool
-hmc_impl(
-    const ColVec_t& initial_vals, 
-    std::function<fp_t (const ColVec_t& vals_inp, ColVec_t* grad_out, void* target_data)> target_log_kernel, 
-    Mat_t& draws_out, 
-    void* target_data, 
-    algo_settings_t* settings_inp
-);
+bool hmc_impl(const ColVec_t &initial_vals,
+              std::function<fp_t(const ColVec_t &vals_inp, ColVec_t *grad_out,
+                                 void *target_data)>
+                  target_log_kernel,
+              Mat_t &draws_out, void *target_data,
+              algo_settings_t *settings_inp);
 
 }
-
-#endif
- 
+} // namespace mcmc

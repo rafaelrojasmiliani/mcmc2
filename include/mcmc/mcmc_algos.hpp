@@ -18,16 +18,12 @@
   ##
   ################################################################################*/
 
-#ifndef MCMC_MCMC_INCLUDES
-#define MCMC_MCMC_INCLUDES
+#pragma once
+#include <mcmc/hmc.hpp>
+#include <mcmc/mala.hpp>
+#include <mcmc/nuts.hpp>
+#include <mcmc/rmhmc.hpp>
+#include <mcmc/rwmh.hpp>
 
-#include "rwmh.hpp"
-#include "mala.hpp"
-#include "hmc.hpp"
-#include "nuts.hpp"
-#include "rmhmc.hpp"
-
-#include "aees.hpp"
-#include "de.hpp"
-
-#endif
+#include <mcmc/aees.hpp>
+#include <mcmc/de.hpp>
