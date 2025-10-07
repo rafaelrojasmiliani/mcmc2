@@ -31,7 +31,6 @@ foreach(_example_source IN LISTS _examples_sources)
 
   add_executable(${_example_name} "${_example_source}")
   target_link_libraries(${_example_name} PRIVATE mcmc)
-  target_compile_features(${_example_name} PRIVATE cxx_std_14)
 
   if(_examples_dependency)
     target_link_libraries(${_example_name} PRIVATE ${_examples_dependency})

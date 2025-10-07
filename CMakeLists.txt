@@ -7,6 +7,8 @@ project(
     "Lightweight C++ library of Markov Chain Monte Carlo (MCMC) methods"
   LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+
 # Build options
 set(MCMC_LINEAR_ALGEBRA
     "EIGEN"
@@ -40,7 +42,7 @@ target_include_directories(
   mcmc ${MCMC_SCOPE} $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
-target_compile_features(mcmc ${MCMC_SCOPE} cxx_std_14)
+target_compile_features(mcmc ${MCMC_SCOPE} cxx_std_17)
 
 if(MCMC_LINEAR_ALGEBRA STREQUAL "ARMA")
   if(NOT MCMC_HEADER_ONLY OR EXAMPLES)
